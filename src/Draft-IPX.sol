@@ -48,7 +48,7 @@ contract IPX is ERC721 {
     // helper function untuk keperluan buy [buat map ownerToTokenIds]
     function _removeTokenIdFromOwner(address owner, uint256 tokenId) internal {
         uint256[] storage tokenIds = ownerToTokenIds[owner];
-        for (uint i = 0; i < tokenIds.length; i++) {
+        for (uint256 i = 0; i < tokenIds.length; i++) {
             if (tokenIds[i] == tokenId) {
                 tokenIds[i] = tokenIds[tokenIds.length - 1]; // ganti dengan elemen terakhir
                 tokenIds.pop(); // hapus elemen terakhir
@@ -98,7 +98,7 @@ contract IPX is ERC721 {
         uint256[] memory tokenIds = ownerToTokenIds[_owner];
         IP[] memory result = new IP[](tokenIds.length);
 
-        for (uint i = 0; i < tokenIds.length; i++) {
+        for (uint256 i = 0; i < tokenIds.length; i++) {
             result[i] = ips[tokenIds[i]];
         }
 
@@ -149,7 +149,7 @@ contract IPX is ERC721 {
     //     uint256 ipRoyaltyPercentage = ip.royaltyPercentage;
 
     //     uint256 rentPirce = ipPrice * ipRoyaltyPercentage / 100;
-        
+
     // }
 
     // GET Transaction Daily

@@ -3,21 +3,19 @@ pragma solidity ^0.8.13;
 
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-
 contract IPX is ERC721 {
+    error InsufficientFunds();
+    error InvalidTokenId();
 
-  error InsufficientFunds();
-  error InvalidTokenId();
+    struct IP {
+        string title;
+        string description;
+        string category;
+    }
 
-  struct IP {
-    string title;
-    string description;
-    string category;
-  }
-
-  struct Rent {
-    uint256 expiresAt;
-  }
+    struct Rent {
+        uint256 expiresAt;
+    }
 
     uint256 public nextTokenId;
 
@@ -26,11 +24,13 @@ contract IPX is ERC721 {
 
     // id IP => user => data rent
     mapping(uint256 => mapping(address => Rent)) public rents;
-    
 
     constructor() ERC721("IPX", "IPX") {}
 
-    function registerIP(string memory title, string memory description, string memory category) public returns (uint256) {
+    function registerIP(string memory title, string memory description, string memory category)
+        public
+        returns (uint256)
+    {
         uint256 tokenId = nextTokenId++;
         _safeMint(msg.sender, tokenId);
         ipData[tokenId] = IP(title, description, category);
@@ -43,12 +43,11 @@ contract IPX is ERC721 {
         _transfer(address(this), msg.sender, tokenId);
     }
 
-
     function rentIP(uint256 tokenId) public payable {
-      if (tokenId > nextTokenId) revert InvalidTokenId();
-      uint256 price = 1000;
-      uint256 duration = 30 days;
-      if (msg.value < price) revert InsufficientFunds();
-      rents[tokenId][msg.sender] = Rent({expiresAt: block.timestamp + duration} );
+        if (tokenId > nextTokenId) revert InvalidTokenId();
+        uint256 price = 1000;
+        uint256 duration = 30 days;
+        if (msg.value < price) revert InsufficientFunds();
+        rents[tokenId][msg.sender] = Rent({expiresAt: block.timestamp + duration});
     }
 }

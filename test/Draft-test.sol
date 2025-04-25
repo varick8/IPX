@@ -18,27 +18,10 @@ contract IPXTest is Test, IERC721Receiver {
     function test_registerIP() public {
         address owner = address(this);
 
-        uint256 tokenId1 = ipX.registerIP(
-            "Title",
-            "Description",
-            1,
-            "Tag",
-            "ipfs://hash",
-            1,
-            1,
-            10
-        );
+        uint256 tokenId1 = ipX.registerIP("Title", "Description", 1, "Tag", "ipfs://hash", 1, 1, 10);
 
-        uint256 tokenId2 = ipX.registerIP(
-            "Title again",
-            "Description again",
-            2,
-            "Tag again",
-            "ipfs://hash again",
-            2,
-            2,
-            20
-        );
+        uint256 tokenId2 =
+            ipX.registerIP("Title again", "Description again", 2, "Tag again", "ipfs://hash again", 2, 2, 20);
 
         assertEq(ipX.ownerOf(tokenId1), owner);
         IPX.IP memory ip = ipX.getIP(tokenId1);
@@ -69,16 +52,7 @@ contract IPXTest is Test, IERC721Receiver {
 
     function test_buyIP() public {
         address owner = address(this);
-        uint256 tokenId = ipX.registerIP(
-            "My IP",
-            "Desc",
-            1,
-            "Tag",
-            "ipfs://file",
-            0,
-            1 ether,
-            5
-        );
+        uint256 tokenId = ipX.registerIP("My IP", "Desc", 1, "Tag", "ipfs://file", 0, 1 ether, 5);
 
         // masih punya yang lama
         assertEq(ipX.ownerOf(tokenId), owner);
@@ -93,27 +67,13 @@ contract IPXTest is Test, IERC721Receiver {
     }
 
     function test_buyOwnIP() public {
-        uint256 tokenId = ipX.registerIP(
-            "My IP",
-            "Desc",
-            1,
-            "Tag",
-            "ipfs://file",
-            0,
-            10 ether,
-            5
-        );
+        uint256 tokenId = ipX.registerIP("My IP", "Desc", 1, "Tag", "ipfs://file", 0, 10 ether, 5);
 
         vm.expectRevert("Cannot buy your own IP");
         ipX.buyIP{value: 10 ether}(tokenId);
     }
 
-    function onERC721Received(
-        address,
-        address,
-        uint256,
-        bytes memory
-    ) public virtual override returns (bytes4) {
+    function onERC721Received(address, address, uint256, bytes memory) public virtual override returns (bytes4) {
         return this.onERC721Received.selector;
     }
 }
