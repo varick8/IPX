@@ -4,7 +4,10 @@ pragma solidity ^0.8.13;
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 contract IPX is ERC721 {
+    error InsufficientFunds();
+    error InvalidTokenId();
 
+    uint256 public rentId;
     uint256 public nextTokenId;
 
     constructor() ERC721("IPX", "IPX") {}
@@ -20,6 +23,15 @@ contract IPX is ERC721 {
         uint8 licenseopt;
         uint256 basePrice;
         uint256 royaltyPercentage;
+    }
+
+    // Rent struct
+    struct Rent {
+        uint256 tokenId;
+        address renter;
+        uint256 expiresAt;
+        uint256 rentPercentage;
+        bool stilValid;
         uint256 timestamps;
     }
 
@@ -27,8 +39,11 @@ contract IPX is ERC721 {
     mapping(uint256 => IP) public ips;
 
     // Mapping dari user address ke tokenId
+    // untuk fungsi getIPsByOwner
     mapping(address => uint256[]) public ownerToTokenIds;
 
+    // Mapping dari tokenId ke Rent metadata
+    mapping(uint256 => Rent) public rents;
 
     // Daftarkan IP dan mint NFT
     function registerIP(
@@ -52,8 +67,7 @@ contract IPX is ERC721 {
             fileUpload: _fileUpload,
             licenseopt: _licenseopt,
             basePrice: _basePrice,
-            royaltyPercentage: _royaltyPercentage,
-            timestamps: block.timestamp
+            royaltyPercentage: _royaltyPercentage
         });
 
         ips[tokenId] = newIP;
@@ -61,6 +75,7 @@ contract IPX is ERC721 {
 
         return tokenId;
     }
+
     // nanti returnnya address pemilik token
     function getIP(uint256 tokenId) public view returns (IP memory) {
         if (tokenId < nextTokenId) revert InvalidTokenId();
@@ -77,5 +92,27 @@ contract IPX is ERC721 {
         }
 
         return result;
+    }
+
+    // Buy IP [pindah kepemilikan IP]
+    // transfernya udah oke, bayarnya gimana ??
+    // [PURA PURA AJA LAH YA]
+    function buyIP(uint256 tokenId) public payable {
+        // cek valid owner
+        address currentOwner = ownerOf(tokenId);
+        require(currentOwner != msg.sender, "Cannot buy your own IP");
+
+        // check price
+        IP memory ip = ips[tokenId];
+        uint256 ipPrice = ip.basePrice;
+
+        if (msg.value < ipPrice) revert InsufficientFunds();
+
+        // masa tokennya doang transfer bayarnya gimana anjir
+        // _transfer itu => from, to, token
+        _transfer(currentOwner, msg.sender, tokenId);
+
+        // Update owner in IP metadata
+        ips[tokenId].owner = msg.sender;
     }
 }
