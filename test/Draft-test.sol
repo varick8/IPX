@@ -12,6 +12,9 @@ contract IPXTest is Test, IERC721Receiver {
         ipX = new IPX();
     }
 
+    // tambahin biar bisa simulai payable
+    receive() external payable {}
+
     function test_registerIP() public {
         address owner = address(this);
 
@@ -60,10 +63,9 @@ contract IPXTest is Test, IERC721Receiver {
         assertNotEq(otherip.tag, "Tag");
         assertNotEq(otherip.fileUpload, "ipfs://hash");
         assertNotEq(otherip.licenseopt, 1);
-        assertNotEq(otherip.basePrice, 1);
+        assertNotEq(otherip.basePrice, 1 ether);
         assertNotEq(otherip.royaltyPercentage, 10);
     }
-
 
     function test_buyIP() public {
         address owner = address(this);
@@ -74,19 +76,36 @@ contract IPXTest is Test, IERC721Receiver {
             "Tag",
             "ipfs://file",
             0,
-            2 ether,
+            1 ether,
             5
         );
-        // sebelum dijual masih punya owner
+
+        // masih punya yang lama
         assertEq(ipX.ownerOf(tokenId), owner);
 
         address buyer = vm.addr(1);
-        vm.deal(buyer, 10000 ether);
+        vm.deal(buyer, 10 ether);
         vm.prank(buyer);
         ipX.buyIP{value: 2 ether}(tokenId);
 
-        // sesudah dijual udah ganti kepemilikan
+        // pindah kepemilikan
         assertEq(ipX.ownerOf(tokenId), buyer);
+    }
+
+    function test_buyOwnIP() public {
+        uint256 tokenId = ipX.registerIP(
+            "My IP",
+            "Desc",
+            1,
+            "Tag",
+            "ipfs://file",
+            0,
+            10 ether,
+            5
+        );
+
+        vm.expectRevert("Cannot buy your own IP");
+        ipX.buyIP{value: 10 ether}(tokenId);
     }
 
     function onERC721Received(
