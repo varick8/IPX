@@ -125,7 +125,7 @@ contract IPX is ERC721 {
         // Update owner in IP metadata
         ips[tokenId].owner = msg.sender;
 
-        // hapus pemilik lama, tambahk ke pemilik baru
+        // hapus pemilik lama, tambah ke pemilik baru
         _removeTokenIdFromOwner(currentOwner, tokenId);
         ownerToTokenIds[msg.sender].push(tokenId);
     }
@@ -151,4 +151,8 @@ contract IPX is ERC721 {
     //     uint256 rentPirce = ipPrice * ipRoyaltyPercentage / 100;
         
     // }
+
+    // GET Transaction Daily
+    // ini buat dashboard management royalty
+    // transactionnya dihimpun per hari
 }
