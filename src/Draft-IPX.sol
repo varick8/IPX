@@ -45,6 +45,18 @@ contract IPX is ERC721 {
     // Mapping dari tokenId ke Rent metadata
     mapping(uint256 => Rent) public rents;
 
+    // helper function untuk keperluan buy [buat map ownerToTokenIds]
+    function _removeTokenIdFromOwner(address owner, uint256 tokenId) internal {
+        uint256[] storage tokenIds = ownerToTokenIds[owner];
+        for (uint i = 0; i < tokenIds.length; i++) {
+            if (tokenIds[i] == tokenId) {
+                tokenIds[i] = tokenIds[tokenIds.length - 1]; // ganti dengan elemen terakhir
+                tokenIds.pop(); // hapus elemen terakhir
+                break;
+            }
+        }
+    }
+
     // Daftarkan IP dan mint NFT
     function registerIP(
         string memory _title,
@@ -105,14 +117,26 @@ contract IPX is ERC721 {
         // check price
         IP memory ip = ips[tokenId];
         uint256 ipPrice = ip.basePrice;
-
         if (msg.value < ipPrice) revert InsufficientFunds();
 
-        // masa tokennya doang transfer bayarnya gimana anjir
+        // Transfer payment to current owner
+        payable(currentOwner).transfer(msg.value);
+
         // _transfer itu => from, to, token
         _transfer(currentOwner, msg.sender, tokenId);
 
         // Update owner in IP metadata
         ips[tokenId].owner = msg.sender;
+
+        // hapus pemilik lama, tambahk ke pemilik baru
+        _removeTokenIdFromOwner(currentOwner, tokenId);
+        ownerToTokenIds[msg.sender].push(tokenId);
+    }
+
+    // Rent IP [dipinjem]
+    // kaynay kemaren ada komersialan dah
+    // gimana dah itu
+    function rentIP(uint256 tokenId) public payable {
+        if (tokenId > nextTokenId) revert InvalidTokenId();
     }
 }
