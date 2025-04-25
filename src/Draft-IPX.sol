@@ -30,7 +30,7 @@ contract IPX is ERC721 {
         uint256 tokenId;
         address renter;
         uint256 expiresAt;
-        uint256 rentPercentage;
+        uint256 rentPrice;
         bool stilValid;
         uint256 timestamps;
     }
@@ -90,7 +90,6 @@ contract IPX is ERC721 {
 
     // nanti returnnya address pemilik token
     function getIP(uint256 tokenId) public view returns (IP memory) {
-        if (tokenId < nextTokenId) revert InvalidTokenId();
         return ips[tokenId];
     }
 
@@ -107,8 +106,6 @@ contract IPX is ERC721 {
     }
 
     // Buy IP [pindah kepemilikan IP]
-    // transfernya udah oke, bayarnya gimana ??
-    // [PURA PURA AJA LAH YA]
     function buyIP(uint256 tokenId) public payable {
         // cek valid owner
         address currentOwner = ownerOf(tokenId);
@@ -136,7 +133,22 @@ contract IPX is ERC721 {
     // Rent IP [dipinjem]
     // kaynay kemaren ada komersialan dah
     // gimana dah itu
-    function rentIP(uint256 tokenId) public payable {
-        if (tokenId > nextTokenId) revert InvalidTokenId();
-    }
+    // function rentIP(
+    //     uint256 tokenId,
+
+    // ) public payable {
+    //     if (tokenId > nextTokenId) revert InvalidTokenId();
+
+    //     // cek valid owner
+    //     address currentOwner = ownerOf(tokenId);
+    //     require(currentOwner != msg.sender, "Cannot rent your own IP");
+
+    //     // rental percentage
+    //     IP memory ip = ips[tokenId];
+    //     uint256 ipPrice = ip.basePrice;
+    //     uint256 ipRoyaltyPercentage = ip.royaltyPercentage;
+
+    //     uint256 rentPirce = ipPrice * ipRoyaltyPercentage / 100;
+        
+    // }
 }
