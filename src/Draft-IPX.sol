@@ -31,7 +31,7 @@ contract IPX is ERC721 {
         address renter;
         uint256 expiresAt;
         uint256 rentPrice;
-        bool stilValid;
+        bool stillValid;
         uint256 timestamps;
     }
 
@@ -55,6 +55,24 @@ contract IPX is ERC721 {
                 break;
             }
         }
+    }
+
+    function _setRent(
+        uint256 tokenId,
+        address renter,
+        uint256 expiresAt,
+        uint256 rentPrice,
+        bool stillValid,
+        uint256 timestamps
+    ) public {
+        rents[tokenId] = Rent({
+            tokenId: tokenId,
+            renter: renter,
+            expiresAt: expiresAt,
+            rentPrice: rentPrice,
+            stillValid: stillValid,
+            timestamps: timestamps
+        });
     }
 
     // Daftarkan IP dan mint NFT
