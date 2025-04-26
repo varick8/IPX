@@ -185,9 +185,11 @@ contract IPX is ERC721 {
         uint256 index = 0;
         for (uint256 i = 0; i < rentId; i++) {
             if (rents[i].renter == renter && rents[i].stillValid) {
-                result[index++] = rents[i]
+                result[index++] = rents[i];
             }
         }
+
+        return result;
     }
 
     // Rent IP [dipinjem]
