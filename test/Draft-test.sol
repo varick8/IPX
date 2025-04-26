@@ -126,7 +126,7 @@ contract IPXTest is Test, IERC721Receiver {
 
         assertEq(rents.length, 1);
         assertEq(rents[0].renter, renter);
-        assertEq(rents[0].tokenId,tokenId);
+        assertEq(rents[0].tokenId, tokenId);
     }
 
     function onERC721Received(address, address, uint256, bytes memory) public virtual override returns (bytes4) {
