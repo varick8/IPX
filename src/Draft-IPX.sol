@@ -130,6 +130,66 @@ contract IPX is ERC721 {
         ownerToTokenIds[msg.sender].push(tokenId);
     }
 
+    // Get IP yang bukan punya owner
+    function getIPsNotOwnedBy(address user) public view returns(IP[] memory) {
+        uint256 count = 0;
+        for (uint256 i = 0; i < nextTokenId; i++) {
+            if (ips[i].owner != user) {
+                count++;
+            }
+        }
+
+        IP[] memory result = new IP[](count);
+        uint256 index = 0;
+        for (uint256 i = 0; i < nextTokenId; i++) {
+            if (ips[i].owner != user) {
+                result[index++] = ips[i];
+            }
+        }
+
+        return result;
+    }
+
+    // Get IP yang disewakan oleh user
+    function getListRentFromMyIPs(address owner) public view returns(Rent[] memory) {
+        uint256 rentCount = 0;
+
+        for (uint256 i = 0; i < nextTokenId; i++) {
+            if (ips[i].owner == owner && rents[i].stillValid) {
+                rentCount++;
+            }
+        }
+
+        Rent[] memory result = new Rent[](rentCount);
+        uint256 index = 0;
+        for (uint256 i = 0; i < nextTokenId; i++) {
+            if (ips[i].owner == owner && rents[i].stillValid) {
+                result[index++] = rents[i];
+            }
+        }
+
+        return result;
+    }
+
+    // Get seluruh IP yang disewa oleh user
+    function getListRent(address renter) public view returns(Rent[] memory) {
+        uint256 count = 0;
+
+        for (uint256 i = 0; i < rentId; i++) {
+            if (rents[i].renter == renter && rents[i].stillValid) {
+                count++;
+            }
+        }
+
+        Rent[] memory result = new Rent[](count);
+        uint256 index = 0;
+        for (uint256 i = 0; i < rentId; i++) {
+            if (rents[i].renter == renter && rents[i].stillValid) {
+                result[index++] = rents[i]
+            }
+        }
+    }
+
     // Rent IP [dipinjem]
     // kaynay kemaren ada komersialan dah
     // gimana dah itu
