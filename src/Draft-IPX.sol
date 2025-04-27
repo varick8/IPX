@@ -73,6 +73,8 @@ contract IPX is ERC721 {
             stillValid: stillValid,
             timestamps: timestamps
         });
+
+        rentId++;
     }
 
     // Daftarkan IP dan mint NFT
