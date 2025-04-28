@@ -10,7 +10,7 @@ contract IPX is ERC721 {
     error InvalidTokenId();
 
     uint256 public rentId;
-    uint256 public nextTokenId = 1;
+    uint256 public nextTokenId = 0;
     RoyaltyTokenFactory public royaltyTokenFactory;
 
     constructor(address _royaltyTokenFactory) ERC721("IPX", "IPX") {
@@ -34,7 +34,7 @@ contract IPX is ERC721 {
     struct Rent {
         address renter;
         uint256 expiresAt;
-        uint256 timestamps;
+        // uint256 timestamps;
     }
 
     // Mapping dari tokenId ke IP metadata
@@ -46,6 +46,10 @@ contract IPX is ERC721 {
 
     // Mapping dari tokenId ke Rent metadata
     mapping(uint256 => Rent) public rents;
+
+    // id IP => user => data rent
+    mapping(uint256 => mapping(address => Rent)) public rental;
+
 
     // id IP => parent IP
     mapping(uint256 => uint256) public parentIds;
@@ -65,25 +69,25 @@ contract IPX is ERC721 {
         }
     }
 
-    function _setRent(
-        uint256 tokenId,
-        address renter,
-        uint256 expiresAt,
-        uint256 rentPrice,
-        bool stillValid,
-        uint256 timestamps
-    ) public {
-        rents[tokenId] = Rent({
-            tokenId: tokenId,
-            renter: renter,
-            expiresAt: expiresAt,
-            rentPrice: rentPrice,
-            stillValid: stillValid,
-            timestamps: timestamps
-        });
+    // function _setRent(
+    //     uint256 tokenId,
+    //     address renter,
+    //     uint256 expiresAt,
+    //     // uint256 rentPrice,
+    //     // bool stillValid,
+    //     uint256 timestamps
+    // ) public {
+    //     rents[tokenId] = Rent({
+    //         // tokenId: tokenId,
+    //         renter: renter,
+    //         expiresAt: expiresAt,
+    //         // rentPrice: rentPrice,
+    //         // stillValid: stillValid,
+    //         timestamps: timestamps
+    //     });
 
-        rentId++;
-    }
+    //     rentId++;
+    // }
 
     // Daftarkan IP dan mint NFT
     function registerIP(
@@ -192,7 +196,7 @@ contract IPX is ERC721 {
         uint256 rentCount = 0;
 
         for (uint256 i = 0; i < nextTokenId; i++) {
-            if (ips[i].owner == owner && rents[i].stillValid) {
+            if (ips[i].owner == owner) {
                 rentCount++;
             }
         }
@@ -200,7 +204,7 @@ contract IPX is ERC721 {
         Rent[] memory result = new Rent[](rentCount);
         uint256 index = 0;
         for (uint256 i = 0; i < nextTokenId; i++) {
-            if (ips[i].owner == owner && rents[i].stillValid) {
+            if (ips[i].owner == owner) {
                 result[index++] = rents[i];
             }
         }
@@ -213,7 +217,7 @@ contract IPX is ERC721 {
         uint256 count = 0;
 
         for (uint256 i = 0; i < rentId; i++) {
-            if (rents[i].renter == renter && rents[i].stillValid) {
+            if (rents[i].renter == renter) {
                 count++;
             }
         }
@@ -221,7 +225,7 @@ contract IPX is ERC721 {
         Rent[] memory result = new Rent[](count);
         uint256 index = 0;
         for (uint256 i = 0; i < rentId; i++) {
-            if (rents[i].renter == renter && rents[i].stillValid) {
+            if (rents[i].renter == renter) {
                 result[index++] = rents[i];
             }
         }
@@ -232,19 +236,24 @@ contract IPX is ERC721 {
     // Rent IP [dipinjem]
     function rentIP(uint256 tokenId) public payable {
         if (tokenId > nextTokenId) revert InvalidTokenId();
-        uint256 price = 1000;
+        uint256 price = ips[tokenId].basePrice;
         uint256 duration = 30 days;
         if (msg.value < price) revert InsufficientFunds();
-        rents[tokenId][msg.sender] = Rent({
+        rental[tokenId][msg.sender] = Rent({
             expiresAt: block.timestamp + duration,
             renter: msg.sender
         });
     }
 
     function remixIP(
-        string memory title,
-        string memory description,
-        string memory category,
+        string memory _title,
+        string memory _description,
+        uint256 _category,
+        string memory _tag,
+        string memory _fileUpload,
+        uint8 _licenseopt,
+        uint256 _basePrice,
+        uint256 _royaltyPercentage,
         uint256 parentId
     ) public returns (uint256) {
         if (parentId > nextTokenId) revert InvalidTokenId();
@@ -252,12 +261,22 @@ contract IPX is ERC721 {
         uint256 parentRoyaltyRightPercentage = 20; // equal to 20%
         uint256 tokenId = nextTokenId++;
         _safeMint(msg.sender, tokenId);
-        ips[tokenId] = IP(title, description, category);
+        ips[tokenId] = IP(
+            msg.sender,
+            _title,
+            _description,
+            _category,
+            _tag,
+            _fileUpload,
+            _licenseopt,
+            _basePrice,
+            _royaltyPercentage
+        );
         parentIds[tokenId] = parentId;
 
         address rt = royaltyTokenFactory.createRoyaltyToken(
-            title,
-            title,
+            _title,
+            _title,
             tokenId
         );
         royaltyTokens[tokenId] = rt;
