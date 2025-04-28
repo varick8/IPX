@@ -34,7 +34,6 @@ contract IPX is ERC721 {
     struct Rent {
         address renter;
         uint256 expiresAt;
-        // uint256 timestamps;
     }
 
     // Mapping dari tokenId ke IP metadata
@@ -49,7 +48,6 @@ contract IPX is ERC721 {
 
     // id IP => user => data rent
     mapping(uint256 => mapping(address => Rent)) public rental;
-
 
     // id IP => parent IP
     mapping(uint256 => uint256) public parentIds;
@@ -68,26 +66,6 @@ contract IPX is ERC721 {
             }
         }
     }
-
-    // function _setRent(
-    //     uint256 tokenId,
-    //     address renter,
-    //     uint256 expiresAt,
-    //     // uint256 rentPrice,
-    //     // bool stillValid,
-    //     uint256 timestamps
-    // ) public {
-    //     rents[tokenId] = Rent({
-    //         // tokenId: tokenId,
-    //         renter: renter,
-    //         expiresAt: expiresAt,
-    //         // rentPrice: rentPrice,
-    //         // stillValid: stillValid,
-    //         timestamps: timestamps
-    //     });
-
-    //     rentId++;
-    // }
 
     // Daftarkan IP dan mint NFT
     function registerIP(
@@ -189,44 +167,21 @@ contract IPX is ERC721 {
         return result;
     }
 
-    // Get IP yang disewakan oleh user
-    function getListRentFromMyIPs(
-        address owner
-    ) public view returns (Rent[] memory) {
-        uint256 rentCount = 0;
-
-        for (uint256 i = 0; i < nextTokenId; i++) {
-            if (ips[i].owner == owner) {
-                rentCount++;
-            }
-        }
-
-        Rent[] memory result = new Rent[](rentCount);
-        uint256 index = 0;
-        for (uint256 i = 0; i < nextTokenId; i++) {
-            if (ips[i].owner == owner) {
-                result[index++] = rents[i];
-            }
-        }
-
-        return result;
-    }
-
     // Get seluruh IP yang disewa oleh user
     function getListRent(address renter) public view returns (Rent[] memory) {
         uint256 count = 0;
 
-        for (uint256 i = 0; i < rentId; i++) {
-            if (rents[i].renter == renter) {
+        for (uint256 tokenId = 0; tokenId < nextTokenId; tokenId++) {
+            if (rental[tokenId][renter].expiresAt > block.timestamp) {
                 count++;
             }
         }
 
         Rent[] memory result = new Rent[](count);
         uint256 index = 0;
-        for (uint256 i = 0; i < rentId; i++) {
-            if (rents[i].renter == renter) {
-                result[index++] = rents[i];
+        for (uint256 tokenId = 0; tokenId < nextTokenId; tokenId++) {
+            if (rental[tokenId][renter].expiresAt > block.timestamp) {
+                result[index++] = rental[tokenId][renter];
             }
         }
 
