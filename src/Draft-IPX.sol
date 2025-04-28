@@ -2,15 +2,20 @@
 pragma solidity ^0.8.13;
 
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {RoyaltyTokenFactory} from "./RoyaltyTokenFactory.sol";
 
 contract IPX is ERC721 {
     error InsufficientFunds();
     error InvalidTokenId();
 
     uint256 public rentId;
-    uint256 public nextTokenId;
+    uint256 public nextTokenId = 1;
+    RoyaltyTokenFactory public royaltyTokenFactory;
 
-    constructor() ERC721("IPX", "IPX") {}
+    constructor(address _royaltyTokenFactory) ERC721("IPX", "IPX") {
+        royaltyTokenFactory = RoyaltyTokenFactory(_royaltyTokenFactory);
+    }
 
     // IP struct
     struct IP {
@@ -27,11 +32,8 @@ contract IPX is ERC721 {
 
     // Rent struct
     struct Rent {
-        uint256 tokenId;
         address renter;
         uint256 expiresAt;
-        uint256 rentPrice;
-        bool stillValid;
         uint256 timestamps;
     }
 
@@ -44,6 +46,12 @@ contract IPX is ERC721 {
 
     // Mapping dari tokenId ke Rent metadata
     mapping(uint256 => Rent) public rents;
+
+    // id IP => parent IP
+    mapping(uint256 => uint256) public parentIds;
+
+    // id IP => royalty token
+    mapping(uint256 => address) public royaltyTokens;
 
     // helper function untuk keperluan buy [buat map ownerToTokenIds]
     function _removeTokenIdFromOwner(address owner, uint256 tokenId) internal {
@@ -104,6 +112,13 @@ contract IPX is ERC721 {
 
         ips[tokenId] = newIP;
         _safeMint(msg.sender, tokenId);
+        address rt = royaltyTokenFactory.createRoyaltyToken(
+            _title,
+            _title,
+            tokenId
+        );
+        royaltyTokens[tokenId] = rt;
+        IERC20(rt).transfer(msg.sender, _basePrice);
 
         return tokenId;
     }
@@ -171,7 +186,9 @@ contract IPX is ERC721 {
     }
 
     // Get IP yang disewakan oleh user
-    function getListRentFromMyIPs(address owner) public view returns (Rent[] memory) {
+    function getListRentFromMyIPs(
+        address owner
+    ) public view returns (Rent[] memory) {
         uint256 rentCount = 0;
 
         for (uint256 i = 0; i < nextTokenId; i++) {
@@ -213,28 +230,47 @@ contract IPX is ERC721 {
     }
 
     // Rent IP [dipinjem]
-    // kaynay kemaren ada komersialan dah
-    // gimana dah itu
-    // function rentIP(
-    //     uint256 tokenId,
+    function rentIP(uint256 tokenId) public payable {
+        if (tokenId > nextTokenId) revert InvalidTokenId();
+        uint256 price = 1000;
+        uint256 duration = 30 days;
+        if (msg.value < price) revert InsufficientFunds();
+        rents[tokenId][msg.sender] = Rent({
+            expiresAt: block.timestamp + duration,
+            renter: msg.sender
+        });
+    }
 
-    // ) public payable {
-    //     if (tokenId > nextTokenId) revert InvalidTokenId();
+    function remixIP(
+        string memory title,
+        string memory description,
+        string memory category,
+        uint256 parentId
+    ) public returns (uint256) {
+        if (parentId > nextTokenId) revert InvalidTokenId();
 
-    //     // cek valid owner
-    //     address currentOwner = ownerOf(tokenId);
-    //     require(currentOwner != msg.sender, "Cannot rent your own IP");
+        uint256 parentRoyaltyRightPercentage = 20; // equal to 20%
+        uint256 tokenId = nextTokenId++;
+        _safeMint(msg.sender, tokenId);
+        ips[tokenId] = IP(title, description, category);
+        parentIds[tokenId] = parentId;
 
-    //     // rental percentage
-    //     IP memory ip = ips[tokenId];
-    //     uint256 ipPrice = ip.basePrice;
-    //     uint256 ipRoyaltyPercentage = ip.royaltyPercentage;
+        address rt = royaltyTokenFactory.createRoyaltyToken(
+            title,
+            title,
+            tokenId
+        );
+        royaltyTokens[tokenId] = rt;
+        uint256 parentRoyaltyRight = (100_000_000e18 *
+            parentRoyaltyRightPercentage) / 100;
+        uint256 creatorRoyaltyRight = 100_000_000e18 - parentRoyaltyRight;
 
-    //     uint256 rentPirce = ipPrice * ipRoyaltyPercentage / 100;
+        // transfer to parent royalty token
+        IERC20(rt).transfer(royaltyTokens[parentId], parentRoyaltyRight);
 
-    // }
+        // transfer to creator
+        IERC20(rt).transfer(msg.sender, creatorRoyaltyRight);
 
-    // GET Transaction Daily
-    // ini buat dashboard management royalty
-    // transactionnya dihimpun per hari
+        return tokenId;
+    }
 }
