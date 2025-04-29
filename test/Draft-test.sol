@@ -247,7 +247,7 @@ contract IPXTest is Test, IERC721Receiver {
     }
 
     // GetIp: tambahin yang bukan kategori remix (Alex)
-    function test_get_ip_remix() public {
+    function test_get_non_remix_remix() public {
         address owner = address(this);
 
         // Step 1: Register dua IP
@@ -276,7 +276,7 @@ contract IPXTest is Test, IERC721Receiver {
         ipX.remixIP(
             "Remix Title",
             "Remix Description",
-            3, // category remix
+            0,
             "Remix Tag",
             "ipfs://remixhash",
             2,
@@ -285,7 +285,12 @@ contract IPXTest is Test, IERC721Receiver {
             0
         );
 
-        ipX.logAllIps(3);
+        IPX.IP[] memory remixIps = ipX.get_non_remix(owner);
+
+        for (uint256 i = 0; i < remixIps.length; i++) {
+            assertNotEq(remixIps[i].licenseopt, 5);
+            console.log(remixIps[i].title);
+        }
     }
 
     function onERC721Received(

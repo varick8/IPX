@@ -31,7 +31,7 @@ contract IPX is ERC721 {
         uint256 royaltyPercentage;
     }
 
-    function logAllIps(uint256 totaldata ) public view {
+    function logAllIps(uint256 totaldata) public view {
         for (uint256 i = 0; i < totaldata; i++) {
             IP memory ip = ips[i];
             console.log("IP", i);
@@ -56,12 +56,11 @@ contract IPX is ERC721 {
     // Mapping dari tokenId ke IP metadata
     mapping(uint256 => IP) public ips;
 
-    // Mapping dari user address ke tokenId
-    // untuk fungsi getIPsByOwner
-    mapping(address => uint256[]) public ownerToTokenIds;
-
     // Mapping dari tokenId ke Rent metadata
     mapping(uint256 => Rent) public rents;
+
+    // Mapping dari user address ke tokenId
+    mapping(address => uint256[]) public ownerToTokenIds;
 
     // id IP => user => data rent
     mapping(uint256 => mapping(address => Rent)) public rental;
@@ -124,23 +123,6 @@ contract IPX is ERC721 {
         return tokenId;
     }
 
-    // nanti returnnya address pemilik token
-    function getIP(uint256 tokenId) public view returns (IP memory) {
-        return ips[tokenId];
-    }
-
-    // nanti returnnya list IP nya
-    function getIPsByOwner(address _owner) public view returns (IP[] memory) {
-        uint256[] memory tokenIds = ownerToTokenIds[_owner];
-        IP[] memory result = new IP[](tokenIds.length);
-
-        for (uint256 i = 0; i < tokenIds.length; i++) {
-            result[i] = ips[tokenIds[i]];
-        }
-
-        return result;
-    }
-
     // Buy IP [pindah kepemilikan IP]
     function buyIP(uint256 tokenId) public payable {
         // cek valid owner
@@ -166,59 +148,7 @@ contract IPX is ERC721 {
         ownerToTokenIds[msg.sender].push(tokenId);
     }
 
-    // Get IP yang bukan punya owner
-    function getIPsNotOwnedBy(address user) public view returns (IP[] memory) {
-        uint256 count = 0;
-        for (uint256 i = 0; i < nextTokenId; i++) {
-            if (ips[i].owner != user) {
-                count++;
-            }
-        }
-
-        IP[] memory result = new IP[](count);
-        uint256 index = 0;
-        for (uint256 i = 0; i < nextTokenId; i++) {
-            if (ips[i].owner != user) {
-                result[index++] = ips[i];
-            }
-        }
-
-        return result;
-    }
-
-    // Get seluruh IP yang disewa oleh user
-    function getListRent(address renter) public view returns (Rent[] memory) {
-        uint256 count = 0;
-
-        for (uint256 tokenId = 0; tokenId < nextTokenId; tokenId++) {
-            if (rental[tokenId][renter].expiresAt > block.timestamp) {
-                count++;
-            }
-        }
-
-        Rent[] memory result = new Rent[](count);
-        uint256 index = 0;
-        for (uint256 tokenId = 0; tokenId < nextTokenId; tokenId++) {
-            if (rental[tokenId][renter].expiresAt > block.timestamp) {
-                result[index++] = rental[tokenId][renter];
-            }
-        }
-
-        return result;
-    }
-
-    // Rent IP [dipinjem]
-    function rentIP(uint256 tokenId) public payable {
-        if (tokenId > nextTokenId) revert InvalidTokenId();
-        uint256 price = ips[tokenId].basePrice;
-        uint256 duration = 30 days;
-        if (msg.value < price) revert InsufficientFunds();
-        rental[tokenId][msg.sender] = Rent({
-            expiresAt: block.timestamp + duration,
-            renter: msg.sender
-        });
-    }
-
+    // remix ip
     function remixIP(
         string memory _title,
         string memory _description,
@@ -265,5 +195,91 @@ contract IPX is ERC721 {
         IERC20(rt).transfer(msg.sender, creatorRoyaltyRight);
 
         return tokenId;
+    }
+
+    // Rent IP [dipinjem]
+    function rentIP(uint256 tokenId) public payable {
+        if (tokenId > nextTokenId) revert InvalidTokenId();
+        uint256 price = ips[tokenId].basePrice;
+        uint256 duration = 30 days;
+        if (msg.value < price) revert InsufficientFunds();
+        rental[tokenId][msg.sender] = Rent({
+            expiresAt: block.timestamp + duration,
+            renter: msg.sender
+        });
+    }
+
+    // nanti returnnya address pemilik token
+    function getIP(uint256 tokenId) public view returns (IP memory) {
+        return ips[tokenId];
+    }
+
+    // nanti returnnya list IP nya
+    function getIPsByOwner(address _owner) public view returns (IP[] memory) {
+        uint256[] memory tokenIds = ownerToTokenIds[_owner];
+        IP[] memory result = new IP[](tokenIds.length);
+
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            result[i] = ips[tokenIds[i]];
+        }
+
+        return result;
+    }
+
+    // Get IP yang bukan punya owner
+    function getIPsNotOwnedBy(address user) public view returns (IP[] memory) {
+        uint256 count = 0;
+        for (uint256 i = 0; i < nextTokenId; i++) {
+            if (ips[i].owner != user) {
+                count++;
+            }
+        }
+
+        IP[] memory result = new IP[](count);
+        uint256 index = 0;
+        for (uint256 i = 0; i < nextTokenId; i++) {
+            if (ips[i].owner != user) {
+                result[index++] = ips[i];
+            }
+        }
+
+        return result;
+    }
+
+    // Get seluruh IP yang disewa oleh user
+    function getListRent(address renter) public view returns (Rent[] memory) {
+        uint256 count = 0;
+
+        for (uint256 tokenId = 0; tokenId < nextTokenId; tokenId++) {
+            if (rental[tokenId][renter].expiresAt > block.timestamp) {
+                count++;
+            }
+        }
+
+        Rent[] memory result = new Rent[](count);
+        uint256 index = 0;
+        for (uint256 tokenId = 0; tokenId < nextTokenId; tokenId++) {
+            if (rental[tokenId][renter].expiresAt > block.timestamp) {
+                result[index++] = rental[tokenId][renter];
+            }
+        }
+
+        return result;
+    }
+
+    // get non-remixer IP
+    function get_non_remix(address _owner) public view returns (IP[] memory) {
+        uint256[] memory tokenIds = ownerToTokenIds[_owner];
+
+        IP[] memory result = new IP[](tokenIds.length);
+
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            // supposed that the remix in liscense opt is 5
+            if (ips[tokenIds[i]].licenseopt != 5) {
+                result[i] = ips[tokenIds[i]];
+            }
+        }
+
+        return result;
     }
 }
