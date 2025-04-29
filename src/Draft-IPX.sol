@@ -36,6 +36,11 @@ contract IPX is ERC721 {
         uint256 expiresAt;
     }
 
+    struct RemixInfo {
+    IP ip;
+    uint256 parentId;
+    }
+
     // Mapping dari tokenId ke IP metadata
     mapping(uint256 => IP) public ips;
 
@@ -206,8 +211,6 @@ contract IPX is ERC721 {
         uint256 _category,
         string memory _tag,
         string memory _fileUpload,
-        uint8 _licenseopt,
-        uint256 _basePrice,
         uint256 _royaltyPercentage,
         uint256 parentId
     ) public returns (uint256) {
@@ -223,11 +226,14 @@ contract IPX is ERC721 {
             _category,
             _tag,
             _fileUpload,
-            _licenseopt,
-            _basePrice,
+            5,
+            0,
             _royaltyPercentage
         );
         parentIds[tokenId] = parentId;
+
+        // Add this line to update the mapping
+        ownerToTokenIds[msg.sender].push(tokenId);
 
         address rt = royaltyTokenFactory.createRoyaltyToken(
             _title,
@@ -246,5 +252,36 @@ contract IPX is ERC721 {
         IERC20(rt).transfer(msg.sender, creatorRoyaltyRight);
 
         return tokenId;
+    }
+
+    function getMyRemix(address _owner) public view returns (RemixInfo[] memory) {
+        uint256[] storage tokenIds = ownerToTokenIds[_owner];
+        uint256 count = 0;
+        
+        // First pass: count remixes
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            uint256 tokenId = tokenIds[i];
+            if (ips[tokenId].licenseopt == 5) {
+                count++;
+            }
+        }
+
+        // Create the result array
+        RemixInfo[] memory result = new RemixInfo[](count);
+        uint256 index = 0;
+
+        // Second pass: populate the result array
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            uint256 tokenId = tokenIds[i];
+            if (ips[tokenId].licenseopt == 5) {
+                result[index] = RemixInfo({
+                    ip: ips[tokenId],
+                    parentId: parentIds[tokenId]
+                });
+                index++;
+            }
+        }
+
+        return result;
     }
 }

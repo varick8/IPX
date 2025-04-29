@@ -130,7 +130,7 @@ contract IPXTest is Test, IERC721Receiver {
 
         uint256 tokenId = ipX.registerIP("My IP", "Desc", 1, "Tag", "ipfs://file", 0, 1 ether, 5);
 
-        ipX.remixIP("My Remix IP", "Desc", 1, "Remix Tag", "ipfs://file", 0, 1 ether, 5, tokenId);
+        ipX.remixIP("My Remix IP", "Desc", 1, "Remix Tag", "ipfs://file", 5, tokenId);
 
         assertEq(ipX.ownerOf(0), owner);
 
@@ -204,6 +204,80 @@ contract IPXTest is Test, IERC721Receiver {
         assertEq(rents.length, 1);
         assertEq(rents[0].renter, renter);
         assertEq(rents[0].expiresAt > block.timestamp, true);
+    }
+
+    // Test getMyRemix() function
+   function test_getMyRemix() public {
+    address owner = address(this);
+    console.log("Owner address:", owner);
+
+    // Daftar IP biasa
+    uint256 originalTokenId = ipX.registerIP(
+        "Original IP",
+        "Original Description",
+        1,
+        "Original Tag",
+        "ipfs://original",
+        0,
+        1 ether,
+        5
+    );
+    console.log("Original token ID:", originalTokenId);
+    
+    // Buat remix IP
+    uint256 remixTokenId = ipX.remixIP(
+        "Remix IP",
+        "Remix Description",
+        1,
+        "Remix Tag",
+        "ipfs://remix",
+        5,
+        originalTokenId
+    );
+    uint256 remixTokenId2 = ipX.remixIP(
+        "Remix IP",
+        "Remix Description",
+        1,
+        "Remix Tag",
+        "ipfs://remix",
+        5,
+        originalTokenId
+    );
+    console.log("Remix token ID:", remixTokenId);
+    console.log("Remix token ID:", remixTokenId2);
+    
+    // Cek data remix
+    IPX.IP memory remixIP = ipX.getIP(remixTokenId);
+    console.log("Remix license option:", remixIP.licenseopt);
+    console.log("Remix parent ID:", ipX.parentIds(remixTokenId));
+    
+    // Panggil getMyRemix
+    IPX.RemixInfo[] memory myRemixes = ipX.getMyRemix(owner);
+    console.log("Number of remixes:", myRemixes.length);
+
+    assertEq(myRemixes.length, 2);
+    assertEq(myRemixes[0].ip.title, "Remix IP");
+    assertEq(myRemixes[0].parentId, originalTokenId);
+}
+
+    function test_getMyRemix_empty() public {
+        address owner = address(this);
+
+        // Daftar IP biasa tanpa remix
+        ipX.registerIP(
+            "Regular IP",
+            "Some Description",
+            1,
+            "Tag",
+            "ipfs://something",
+            0,
+            1 ether,
+            5
+        );
+
+        // Harusnya tidak ada remix
+        IPX.RemixInfo[] memory myRemixes = ipX.getMyRemix(owner);
+        assertEq(myRemixes.length, 0);
     }
 
     function onERC721Received(
