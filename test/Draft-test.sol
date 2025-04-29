@@ -310,6 +310,56 @@ contract IPXTest is Test, IERC721Receiver {
         assertEq(myRemixes.length, 0);
     }
 
+    function test_getMyIPsRemix() public {
+
+        address owner = address(1);
+        address user1 = address(2);
+        address user2 = address(3);
+
+        vm.prank(owner);
+        uint256 originalTokenId = ipX.registerIP(
+            "Original IP",
+            "Original Description",
+            1,
+            "Original Tag",
+            "ipfs://original",
+            0,
+            1 ether,
+            5
+        );
+
+        vm.prank(user1);
+        uint256 remixTokenId = ipX.remixIP(
+            "Remix IP",
+            "Remix Description",
+            1,
+            "Remix Tag",
+            "ipfs://remix",
+            5,
+            originalTokenId
+        );
+
+        vm.prank(user2);
+        uint256 remixTokenId2 = ipX.remixIP(
+            "Remix IP",
+            "Remix Description",
+            1,
+            "Remix Tag",
+            "ipfs://remix",
+            5,
+            originalTokenId
+        );
+        console.log("Remix token ID:", remixTokenId);
+        console.log("Remix token ID:", remixTokenId2);
+
+        address[] memory remixers = ipX.getMyIPsRemix(originalTokenId);
+
+        assertEq(remixers.length, 2);
+        assertEq(remixers[0], user1);
+        assertEq(remixers[1], user2);
+
+    }
+
     // GetIp: tambahin yang bukan kategori remix (Alex)
     function test_get_non_remix_remix() public {
         address owner = address(this);
@@ -354,6 +404,7 @@ contract IPXTest is Test, IERC721Receiver {
             console.log(remixIps[i].title);
         }
     }
+
 
     function onERC721Received(
         address,
