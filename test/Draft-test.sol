@@ -128,9 +128,28 @@ contract IPXTest is Test, IERC721Receiver {
     function test_remixIP() public {
         address owner = address(this);
 
-        uint256 tokenId = ipX.registerIP("My IP", "Desc", 1, "Tag", "ipfs://file", 0, 1 ether, 5);
+        uint256 tokenId = ipX.registerIP(
+            "My IP",
+            "Desc",
+            1,
+            "Tag",
+            "ipfs://file",
+            0,
+            1 ether,
+            5
+        );
 
-        ipX.remixIP("My Remix IP", "Desc", 1, "Remix Tag", "ipfs://file", 0, 1 ether, 5, tokenId);
+        ipX.remixIP(
+            "My Remix IP",
+            "Desc",
+            1,
+            "Remix Tag",
+            "ipfs://file",
+            0,
+            1 ether,
+            5,
+            tokenId
+        );
 
         assertEq(ipX.ownerOf(0), owner);
 
@@ -142,7 +161,10 @@ contract IPXTest is Test, IERC721Receiver {
         // console.log(IERC20(childRoyaltyToken).balanceOf(owner));
 
         // parent should have 20% of the child royalty token
-        assertEq(IERC20(childRoyaltyToken).balanceOf(parentRoyaltyToken), 20_000_000e18);
+        assertEq(
+            IERC20(childRoyaltyToken).balanceOf(parentRoyaltyToken),
+            20_000_000e18
+        );
 
         // creator should have 80% of the child royalty token
         assertEq(IERC20(childRoyaltyToken).balanceOf(owner), 80_000_000e18);
@@ -151,7 +173,16 @@ contract IPXTest is Test, IERC721Receiver {
     function test_deposit_claim_royalty() public {
         // royalty reward token is USDC
         mockUSDC.mint(address(this), 1000e6);
-        uint256 tokenIp = ipX.registerIP("My IP", "Desc", 1, "Tag", "ipfs://file", 0, 1 ether, 5);
+        uint256 tokenIp = ipX.registerIP(
+            "My IP",
+            "Desc",
+            1,
+            "Tag",
+            "ipfs://file",
+            0,
+            1 ether,
+            5
+        );
 
         // deposit royalty
         address rt = ipX.royaltyTokens(tokenIp);
@@ -190,7 +221,16 @@ contract IPXTest is Test, IERC721Receiver {
     function test_getListRent() public {
         address renter = vm.addr(3);
 
-        uint256 tokenId = ipX.registerIP("IP Rent", "Desc Rent", 1, "TagRent", "ipfs://rent", 1, 1 ether, 10);
+        uint256 tokenId = ipX.registerIP(
+            "IP Rent",
+            "Desc Rent",
+            1,
+            "TagRent",
+            "ipfs://rent",
+            1,
+            1 ether,
+            10
+        );
         vm.deal(renter, 10 ether);
         vm.prank(renter);
         ipX.rentIP{value: 1 ether}(tokenId);
@@ -204,6 +244,48 @@ contract IPXTest is Test, IERC721Receiver {
         assertEq(rents.length, 1);
         assertEq(rents[0].renter, renter);
         assertEq(rents[0].expiresAt > block.timestamp, true);
+    }
+
+    // GetIp: tambahin yang bukan kategori remix (Alex)
+    function test_get_ip_remix() public {
+        address owner = address(this);
+
+        // Step 1: Register dua IP
+        ipX.registerIP(
+            "Title",
+            "Description",
+            1,
+            "Tag",
+            "ipfs://hash",
+            1,
+            1,
+            10
+        );
+
+        ipX.registerIP(
+            "Title again",
+            "Description again",
+            2,
+            "Tag again",
+            "ipfs://hash again",
+            4,
+            5,
+            20
+        );
+
+        ipX.remixIP(
+            "Remix Title",
+            "Remix Description",
+            3, // category remix
+            "Remix Tag",
+            "ipfs://remixhash",
+            2,
+            3,
+            15,
+            0
+        );
+
+        ipX.logAllIps(3);
     }
 
     function onERC721Received(

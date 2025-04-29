@@ -4,6 +4,7 @@ pragma solidity ^0.8.13;
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {RoyaltyTokenFactory} from "./RoyaltyTokenFactory.sol";
+import "forge-std/console.sol"; // Foundry
 
 contract IPX is ERC721 {
     error InsufficientFunds();
@@ -28,6 +29,22 @@ contract IPX is ERC721 {
         uint8 licenseopt;
         uint256 basePrice;
         uint256 royaltyPercentage;
+    }
+
+    function logAllIps(uint256 totaldata ) public view {
+        for (uint256 i = 0; i < totaldata; i++) {
+            IP memory ip = ips[i];
+            console.log("IP", i);
+            console.log("Owner:", ip.owner);
+            console.log("Title:", ip.title);
+            console.log("Description:", ip.description);
+            console.log("Category:", ip.category);
+            console.log("Tag:", ip.tag);
+            console.log("FileUpload:", ip.fileUpload);
+            console.log("LicenseOpt:", ip.licenseopt);
+            console.log("BasePrice:", ip.basePrice);
+            console.log("RoyaltyPercentage:", ip.royaltyPercentage);
+        }
     }
 
     // Rent struct
@@ -101,6 +118,8 @@ contract IPX is ERC721 {
         );
         royaltyTokens[tokenId] = rt;
         IERC20(rt).transfer(msg.sender, _basePrice);
+
+        ownerToTokenIds[msg.sender].push(tokenId);
 
         return tokenId;
     }
