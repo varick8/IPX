@@ -343,8 +343,6 @@ contract IPXTest is Test, IERC721Receiver {
             3, // category remix
             "Remix Tag",
             "ipfs://remixhash",
-            2,
-        
             15,
             0
         );
