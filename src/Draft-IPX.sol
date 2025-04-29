@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
+import "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {RoyaltyTokenFactory} from "./RoyaltyTokenFactory.sol";
 import "forge-std/console.sol"; // Foundry
 
@@ -59,6 +59,7 @@ contract IPX is ERC721 {
         uint256 parentId;
     }
     // Mapping dari tokenId ke IP metadata
+
     mapping(uint256 => IP) public ips;
 
     // Mapping dari tokenId ke Rent metadata
@@ -120,11 +121,7 @@ contract IPX is ERC721 {
 
         ips[tokenId] = newIP;
         _safeMint(msg.sender, tokenId);
-        address rt = royaltyTokenFactory.createRoyaltyToken(
-            _title,
-            _title,
-            tokenId
-        );
+        address rt = royaltyTokenFactory.createRoyaltyToken(_title, _title, tokenId);
         royaltyTokens[tokenId] = rt;
         IERC20(rt).transfer(msg.sender, _basePrice);
 
@@ -164,10 +161,7 @@ contract IPX is ERC721 {
         uint256 price = ips[tokenId].basePrice;
         uint256 duration = 30 days;
         if (msg.value < price) revert InsufficientFunds();
-        rental[tokenId][msg.sender] = Rent({
-            expiresAt: block.timestamp + duration,
-            renter: msg.sender
-        });
+        rental[tokenId][msg.sender] = Rent({expiresAt: block.timestamp + duration, renter: msg.sender});
     }
 
     // remix ip
@@ -185,17 +179,7 @@ contract IPX is ERC721 {
         uint256 parentRoyaltyRightPercentage = 20; // equal to 20%
         uint256 tokenId = nextTokenId++;
         _safeMint(msg.sender, tokenId);
-        ips[tokenId] = IP(
-            msg.sender,
-            _title,
-            _description,
-            _category,
-            _tag,
-            _fileUpload,
-            5,
-            0,
-            _royaltyPercentage
-        );
+        ips[tokenId] = IP(msg.sender, _title, _description, _category, _tag, _fileUpload, 5, 0, _royaltyPercentage);
         parentIds[tokenId] = parentId;
 
         if (!hasRemixed[parentId][msg.sender]) {
@@ -206,14 +190,9 @@ contract IPX is ERC721 {
         // Add this line to update the mapping
         ownerToTokenIds[msg.sender].push(tokenId);
 
-        address rt = royaltyTokenFactory.createRoyaltyToken(
-            _title,
-            _title,
-            tokenId
-        );
+        address rt = royaltyTokenFactory.createRoyaltyToken(_title, _title, tokenId);
         royaltyTokens[tokenId] = rt;
-        uint256 parentRoyaltyRight = (100_000_000e18 *
-            parentRoyaltyRightPercentage) / 100;
+        uint256 parentRoyaltyRight = (100_000_000e18 * parentRoyaltyRightPercentage) / 100;
         uint256 creatorRoyaltyRight = 100_000_000e18 - parentRoyaltyRight;
 
         // transfer to parent royalty token
@@ -300,15 +279,15 @@ contract IPX is ERC721 {
     }
 
     // Get siapa aja yang nge-remix IP user
-    function getMyIPsRemix(uint256 parentTokenId) public view returns(address[] memory) {
+    function getMyIPsRemix(uint256 parentTokenId) public view returns (address[] memory) {
         return remixersOf[parentTokenId];
     }
 
-        // Get IP yang user remix
+    // Get IP yang user remix
     function getMyRemix(address _owner) public view returns (RemixInfo[] memory) {
         uint256[] storage tokenIds = ownerToTokenIds[_owner];
         uint256 count = 0;
-        
+
         // First pass: count remixes
         for (uint256 i = 0; i < tokenIds.length; i++) {
             uint256 tokenId = tokenIds[i];
@@ -325,10 +304,7 @@ contract IPX is ERC721 {
         for (uint256 i = 0; i < tokenIds.length; i++) {
             uint256 tokenId = tokenIds[i];
             if (ips[tokenId].licenseopt == 5) {
-                result[index] = RemixInfo({
-                    ip: ips[tokenId],
-                    parentId: parentIds[tokenId]
-                });
+                result[index] = RemixInfo({ip: ips[tokenId], parentId: parentIds[tokenId]});
                 index++;
             }
         }
