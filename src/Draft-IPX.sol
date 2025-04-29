@@ -58,9 +58,6 @@ contract IPX is ERC721 {
         IP ip;
         uint256 parentId;
     }
-
-    // 
-
     // Mapping dari tokenId ke IP metadata
     mapping(uint256 => IP) public ips;
 
@@ -81,7 +78,7 @@ contract IPX is ERC721 {
 
     mapping(uint256 => mapping(address => bool)) public hasRemixed;
 
-    // paren IP id => list of remixers' addresses
+    // parent IP id => list of remixers' addresses
     mapping(uint256 => address[]) public remixersOf;
 
     // helper function untuk keperluan buy [buat map ownerToTokenIds]
@@ -161,6 +158,18 @@ contract IPX is ERC721 {
         ownerToTokenIds[msg.sender].push(tokenId);
     }
 
+    // Rent IP [dipinjem]
+    function rentIP(uint256 tokenId) public payable {
+        if (tokenId > nextTokenId) revert InvalidTokenId();
+        uint256 price = ips[tokenId].basePrice;
+        uint256 duration = 30 days;
+        if (msg.value < price) revert InsufficientFunds();
+        rental[tokenId][msg.sender] = Rent({
+            expiresAt: block.timestamp + duration,
+            renter: msg.sender
+        });
+    }
+
     // remix ip
     function remixIP(
         string memory _title,
@@ -214,53 +223,6 @@ contract IPX is ERC721 {
         IERC20(rt).transfer(msg.sender, creatorRoyaltyRight);
 
         return tokenId;
-    }
-
-    function getMyRemix(address _owner) public view returns (RemixInfo[] memory) {
-        uint256[] storage tokenIds = ownerToTokenIds[_owner];
-        uint256 count = 0;
-        
-        // First pass: count remixes
-        for (uint256 i = 0; i < tokenIds.length; i++) {
-            uint256 tokenId = tokenIds[i];
-            if (ips[tokenId].licenseopt == 5) {
-                count++;
-            }
-        }
-
-        // Create the result array
-        RemixInfo[] memory result = new RemixInfo[](count);
-        uint256 index = 0;
-
-        // Second pass: populate the result array
-        for (uint256 i = 0; i < tokenIds.length; i++) {
-            uint256 tokenId = tokenIds[i];
-            if (ips[tokenId].licenseopt == 5) {
-                result[index] = RemixInfo({
-                    ip: ips[tokenId],
-                    parentId: parentIds[tokenId]
-                });
-                index++;
-            }
-        }
-
-        return result;
-    }
-
-    function getMyIPsRemix(uint256 parentTokenId) public view returns(address[] memory) {
-        return remixersOf[parentTokenId];
-    }
-
-    // Rent IP [dipinjem]
-    function rentIP(uint256 tokenId) public payable {
-        if (tokenId > nextTokenId) revert InvalidTokenId();
-        uint256 price = ips[tokenId].basePrice;
-        uint256 duration = 30 days;
-        if (msg.value < price) revert InsufficientFunds();
-        rental[tokenId][msg.sender] = Rent({
-            expiresAt: block.timestamp + duration,
-            renter: msg.sender
-        });
     }
 
     // nanti returnnya address pemilik token
@@ -331,6 +293,43 @@ contract IPX is ERC721 {
             // supposed that the remix in liscense opt is 5
             if (ips[tokenIds[i]].licenseopt != 5) {
                 result[i] = ips[tokenIds[i]];
+            }
+        }
+
+        return result;
+    }
+
+    // Get siapa aja yang nge-remix IP user
+    function getMyIPsRemix(uint256 parentTokenId) public view returns(address[] memory) {
+        return remixersOf[parentTokenId];
+    }
+
+        // Get IP yang user remix
+    function getMyRemix(address _owner) public view returns (RemixInfo[] memory) {
+        uint256[] storage tokenIds = ownerToTokenIds[_owner];
+        uint256 count = 0;
+        
+        // First pass: count remixes
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            uint256 tokenId = tokenIds[i];
+            if (ips[tokenId].licenseopt == 5) {
+                count++;
+            }
+        }
+
+        // Create the result array
+        RemixInfo[] memory result = new RemixInfo[](count);
+        uint256 index = 0;
+
+        // Second pass: populate the result array
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            uint256 tokenId = tokenIds[i];
+            if (ips[tokenId].licenseopt == 5) {
+                result[index] = RemixInfo({
+                    ip: ips[tokenId],
+                    parentId: parentIds[tokenId]
+                });
+                index++;
             }
         }
 

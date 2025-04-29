@@ -354,6 +354,9 @@ contract IPXTest is Test, IERC721Receiver {
 
         address[] memory remixers = ipX.getMyIPsRemix(originalTokenId);
 
+        console.log("Remixer's address 1:", remixers[0]);
+        console.log("Remixer's address 2:", remixers[1]);
+
         assertEq(remixers.length, 2);
         assertEq(remixers[0], user1);
         assertEq(remixers[1], user2);
