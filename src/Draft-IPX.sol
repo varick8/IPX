@@ -28,7 +28,7 @@ contract IPX is ERC721 {
         string fileUpload;
         uint8 licenseopt;
         uint256 basePrice;
-        uint356 rentPrice;
+        uint256 rentPrice;
         uint256 royaltyPercentage;
     }
 
@@ -115,7 +115,7 @@ contract IPX is ERC721 {
         uint8 _licenseopt,
         uint256 _basePrice,
         uint256 _rentPrice,
-        // uint256 _royaltyPercentage
+        uint256 _royaltyPercentage
     ) public returns (uint256) {
         uint256 tokenId = nextTokenId++;
 
@@ -129,13 +129,13 @@ contract IPX is ERC721 {
             licenseopt: _licenseopt,
             basePrice: _basePrice,
             rentPrice: _rentPrice,
-            // royaltyPercentage: _royaltyPercentage
+            royaltyPercentage: _royaltyPercentage
         });
 
         ips[tokenId] = newIP;
         _safeMint(msg.sender, tokenId);
-        // address rt = royaltyTokenFactory.createRoyaltyToken(_title, _title, tokenId);
-        // royaltyTokens[tokenId] = rt;
+        address rt = royaltyTokenFactory.createRoyaltyToken(_title, _title, tokenId);
+        royaltyTokens[tokenId] = rt;
         IERC20(rt).transfer(msg.sender, _basePrice);
 
         ownerToTokenIds[msg.sender].push(tokenId);
@@ -196,7 +196,7 @@ contract IPX is ERC721 {
         uint256 parentRoyaltyRightPercentage = _royaltyPercentage; // equal to 20%
         uint256 tokenId = nextTokenId++;
         _safeMint(msg.sender, tokenId);
-        ips[tokenId] = IP(msg.sender, _title, _description, _category, _tag, _fileUpload, 5, 0, _royaltyPercentage);
+        ips[tokenId] = IP(msg.sender, _title, _description, _category, _tag, _fileUpload, 4, 0, 0, _royaltyPercentage);
         parentIds[tokenId] = parentId;
 
         if (!hasRemixed[parentId][msg.sender]) {
