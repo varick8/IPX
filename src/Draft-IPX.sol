@@ -63,7 +63,7 @@ contract IPX is ERC721 {
     mapping(uint256 => IP) public ips;
 
     // Mapping dari tokenId ke Rent metadata
-    mapping(uint256 => Rent) public rents;
+    mapping(uint256 => address[]) public rents;
 
     // Mapping dari user address ke tokenId
     mapping(address => uint256[]) public ownerToTokenIds;
@@ -162,6 +162,7 @@ contract IPX is ERC721 {
         uint256 duration = 30 days;
         if (msg.value < price) revert InsufficientFunds();
         rental[tokenId][msg.sender] = Rent({expiresAt: block.timestamp + duration, renter: msg.sender});
+        rents[tokenId].push(msg.sender);
     }
 
     // remix ip
@@ -310,5 +311,51 @@ contract IPX is ERC721 {
         }
 
         return result;
+    }
+
+    // Function untuk melihat siapa aja yang minjem IP gua
+    function getListRentFromMyIp() public view returns (address[] memory) {
+        uint256[] memory tokenIds = ownerToTokenIds[msg.sender];
+
+        // First, count the maximum possible number of renters
+        uint256 maxRenters = 0;
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            maxRenters += rents[tokenIds[i]].length;
+        }
+
+        // Create temporary arrays
+        address[] memory tempRenters = new address[](maxRenters);
+        uint256 uniqueCount = 0;
+
+        // Collect unique renters
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            uint256 tokenId = tokenIds[i];
+            for (uint256 j = 0; j < rents[tokenId].length; j++) {
+                address renter = rents[tokenId][j];
+                bool isDuplicate = false;
+
+                // Check if this address already exists in our result
+                for (uint256 k = 0; k < uniqueCount; k++) {
+                    if (tempRenters[k] == renter) {
+                        isDuplicate = true;
+                        break;
+                    }
+                }
+
+                // If not a duplicate, add it
+                if (!isDuplicate) {
+                    tempRenters[uniqueCount] = renter;
+                    uniqueCount++;
+                }
+            }
+        }
+
+        // Create a right-sized array with only unique renters
+        address[] memory uniqueRenters = new address[](uniqueCount);
+        for (uint256 i = 0; i < uniqueCount; i++) {
+            uniqueRenters[i] = tempRenters[i];
+        }
+
+        return uniqueRenters;
     }
 }
