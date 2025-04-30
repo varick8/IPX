@@ -105,7 +105,7 @@ contract IPX is ERC721 {
 
     // Daftarkan IP dan mint NFT
     // tamabahin logic license opt
-    // 0 = personal, 1 = rent, 2 = rent&buy, 3 = remix
+    // 0 = personal, 1 = rent, 2 = rent&buy, 3 = remix: parent IP remix, 4 = remixIP: child remix
     function registerIP(
         string memory _title,
         string memory _description,
