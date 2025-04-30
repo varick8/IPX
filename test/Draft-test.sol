@@ -262,6 +262,171 @@ contract IPXTest is Test, IERC721Receiver {
         }
     }
 
+    function test_getListRentFromMyIp_PreventsDuplicates() public {
+        // Register two IPs owned by the test contract
+        uint256 tokenId1 = ipX.registerIP("IP One", "First IP for rent", 1, "Test", "ipfs://file1", 0, 1 ether, 5);
+        uint256 tokenId2 = ipX.registerIP("IP Two", "Second IP for rent", 2, "Test", "ipfs://file2", 0, 2 ether, 7);
+
+        // Create test renter addresses
+        address renter1 = vm.addr(101);
+        address renter2 = vm.addr(102);
+
+        // Fund the renters
+        vm.deal(renter1, 10 ether);
+        vm.deal(renter2, 10 ether);
+
+        // Initially, there should be no renters
+        address[] memory initialRenters = ipX.getListRentFromMyIp();
+        assertEq(initialRenters.length, 0, "Should start with no renters");
+
+        // Renter1 rents both IPs
+        vm.prank(renter1);
+        ipX.rentIP{value: 1 ether}(tokenId1);
+
+        vm.prank(renter1); // Same renter rents another IP
+        ipX.rentIP{value: 2 ether}(tokenId2);
+
+        // Renter2 rents the first IP
+        vm.prank(renter2);
+        ipX.rentIP{value: 1 ether}(tokenId1);
+
+        // Check that we have only 2 unique renters despite 3 rental transactions
+        address[] memory uniqueRenters = ipX.getListRentFromMyIp();
+
+        // Log the results
+        console.log("Number of unique renters:", uniqueRenters.length);
+        for (uint256 i = 0; i < uniqueRenters.length; i++) {
+            console.log("Unique renter", i, ":", uniqueRenters[i]);
+        }
+
+        // The result should contain exactly 2 unique addresses
+        assertEq(uniqueRenters.length, 2, "Should have exactly 2 unique renters");
+
+        // Verify both renters are included (order may vary)
+        bool foundRenter1 = false;
+        bool foundRenter2 = false;
+
+        for (uint256 i = 0; i < uniqueRenters.length; i++) {
+            if (uniqueRenters[i] == renter1) foundRenter1 = true;
+            if (uniqueRenters[i] == renter2) foundRenter2 = true;
+        }
+
+        assertTrue(foundRenter1, "Should include renter1");
+        assertTrue(foundRenter2, "Should include renter2");
+    }
+
+    function test_getListRentFromMyIp_General_Part1() public {
+        // Register IPs owned by the test contract
+        uint256 tokenId1 = ipX.registerIP("IP One", "First IP for rent", 1, "Test", "ipfs://file1", 0, 1 ether, 5);
+        uint256 tokenId2 = ipX.registerIP("IP Two", "Second IP for rent", 2, "Test", "ipfs://file2", 0, 2 ether, 7);
+
+        // Create test renter addresses
+        address renter1 = vm.addr(101);
+        address renter2 = vm.addr(102);
+
+        // Fund the renters
+        vm.deal(renter1, 10 ether);
+        vm.deal(renter2, 10 ether);
+
+        // Test 1: Initially, there should be no renters
+        address[] memory initialRenters = ipX.getListRentFromMyIp();
+        assertEq(initialRenters.length, 0, "Should start with no renters");
+
+        // Test 2: Add one renter to one IP
+        vm.prank(renter1);
+        ipX.rentIP{value: 1 ether}(tokenId1);
+
+        address[] memory oneRenter = ipX.getListRentFromMyIp();
+        assertEq(oneRenter.length, 1, "Should have one renter");
+        assertEq(oneRenter[0], renter1, "Should be renter1");
+
+        // Test 3: Add another renter to a different IP
+        vm.prank(renter2);
+        ipX.rentIP{value: 2 ether}(tokenId2);
+
+        address[] memory multipleRenters = ipX.getListRentFromMyIp();
+        assertEq(multipleRenters.length, 2, "Should have two renters");
+    }
+
+    function test_getListRentFromMyIp_General_Part2() public {
+        // Register IPs owned by the test contract
+        uint256 tokenId1 = ipX.registerIP("IP One", "First IP for rent", 1, "Test", "ipfs://file1", 0, 1 ether, 5);
+
+        // Create test renter and owner addresses
+        address renter1 = vm.addr(101);
+        address otherOwner = vm.addr(200);
+
+        // Fund accounts
+        vm.deal(renter1, 10 ether);
+        vm.deal(otherOwner, 10 ether);
+
+        // Add a renter to our IP
+        vm.prank(renter1);
+        ipX.rentIP{value: 1 ether}(tokenId1);
+
+        // Test 4: Test with another owner's perspective
+        vm.startPrank(otherOwner);
+        uint256 otherTokenId = ipX.registerIP("Other IP", "Other owner's IP", 4, "Test", "ipfs://other", 0, 1 ether, 5);
+        address[] memory otherOwnerInitialRenters = ipX.getListRentFromMyIp();
+        assertEq(otherOwnerInitialRenters.length, 0, "Other owner should have no renters initially");
+        vm.stopPrank();
+
+        // Original owner should still see their renter
+        address[] memory originalRenters = ipX.getListRentFromMyIp();
+        assertEq(originalRenters.length, 1, "Original owner should have one renter");
+        assertEq(originalRenters[0], renter1, "Should be renter1");
+    }
+
+    function test_getListRentFromMyIp_General_Part3() public {
+        // Register IP owned by the test contract
+        uint256 tokenId1 = ipX.registerIP("IP One", "First IP for rent", 1, "Test", "ipfs://file1", 0, 1 ether, 5);
+
+        // Create test renter and new owner addresses
+        address renter1 = vm.addr(101);
+        address newOwner = vm.addr(300);
+
+        // Fund accounts
+        vm.deal(renter1, 10 ether);
+        vm.deal(newOwner, 10 ether);
+
+        // Add a renter to our IP
+        vm.prank(renter1);
+        ipX.rentIP{value: 1 ether}(tokenId1);
+
+        // Verify the renter is correctly tracked before transfer
+        address[] memory beforeTransferRenters = ipX.getListRentFromMyIp();
+        assertEq(beforeTransferRenters.length, 1, "Original owner should see one renter before transfer");
+
+        // Check token ownership before transfer
+        console.log("Token owner before transfer:", ipX.ownerOf(tokenId1));
+
+        // Transfer tokenId1 to newOwner
+        ipX.transferFrom(address(this), newOwner, tokenId1);
+
+        // Verify token ownership after transfer
+        console.log("Token owner after transfer:", ipX.ownerOf(tokenId1));
+
+        // Check renters for original owner
+        address[] memory afterTransferRenters = ipX.getListRentFromMyIp();
+        console.log("Original owner renters after transfer:", afterTransferRenters.length);
+
+        // Check renters for new owner
+        vm.prank(newOwner);
+        address[] memory newOwnerRenters = ipX.getListRentFromMyIp();
+        console.log("New owner renters after transfer:", newOwnerRenters.length);
+
+        // Let's also get the rent data directly to see what's happening
+        IPX.Rent[] memory rents = ipX.getListRent(renter1);
+        console.log("Renter's active rentals:", rents.length);
+
+        // Print any available fields from the Rent struct
+        if (rents.length > 0) {
+            console.log("Rental renter:", rents[0].renter);
+            console.log("Rental expires at:", rents[0].expiresAt);
+            // Add other fields that actually exist in the Rent struct
+        }
+    }
+
     function onERC721Received(address, address, uint256, bytes memory) public virtual override returns (bytes4) {
         return this.onERC721Received.selector;
     }
