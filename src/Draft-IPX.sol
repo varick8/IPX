@@ -28,6 +28,7 @@ contract IPX is ERC721 {
         string fileUpload;
         uint8 licenseopt;
         uint256 basePrice;
+        uint356 rentPrice;
         uint256 royaltyPercentage;
     }
 
@@ -95,6 +96,8 @@ contract IPX is ERC721 {
     }
 
     // Daftarkan IP dan mint NFT
+    // tamabahin logic license opt
+    // 0 = personal, 1 = rent, 2 = rent&buy, 3 = remix
     function registerIP(
         string memory _title,
         string memory _description,
@@ -103,7 +106,8 @@ contract IPX is ERC721 {
         string memory _fileUpload,
         uint8 _licenseopt,
         uint256 _basePrice,
-        uint256 _royaltyPercentage
+        uint256 _rentPrice,
+        // uint256 _royaltyPercentage
     ) public returns (uint256) {
         uint256 tokenId = nextTokenId++;
 
@@ -116,13 +120,14 @@ contract IPX is ERC721 {
             fileUpload: _fileUpload,
             licenseopt: _licenseopt,
             basePrice: _basePrice,
-            royaltyPercentage: _royaltyPercentage
+            rentPrice: _rentPrice,
+            // royaltyPercentage: _royaltyPercentage
         });
 
         ips[tokenId] = newIP;
         _safeMint(msg.sender, tokenId);
-        address rt = royaltyTokenFactory.createRoyaltyToken(_title, _title, tokenId);
-        royaltyTokens[tokenId] = rt;
+        // address rt = royaltyTokenFactory.createRoyaltyToken(_title, _title, tokenId);
+        // royaltyTokens[tokenId] = rt;
         IERC20(rt).transfer(msg.sender, _basePrice);
 
         ownerToTokenIds[msg.sender].push(tokenId);
@@ -156,9 +161,10 @@ contract IPX is ERC721 {
     }
 
     // Rent IP [dipinjem]
+    // ini penentuan duration jadinya
     function rentIP(uint256 tokenId) public payable {
         if (tokenId > nextTokenId) revert InvalidTokenId();
-        uint256 price = ips[tokenId].basePrice;
+        uint256 price = ips[tokenId].rentPrice;
         uint256 duration = 30 days;
         if (msg.value < price) revert InsufficientFunds();
         rental[tokenId][msg.sender] = Rent({expiresAt: block.timestamp + duration, renter: msg.sender});
@@ -166,6 +172,8 @@ contract IPX is ERC721 {
     }
 
     // remix ip
+    // pembagian royalti bukannya lewat withdraw?
+    // pending royalti gmn?
     function remixIP(
         string memory _title,
         string memory _description,
@@ -177,7 +185,7 @@ contract IPX is ERC721 {
     ) public returns (uint256) {
         if (parentId > nextTokenId) revert InvalidTokenId();
 
-        uint256 parentRoyaltyRightPercentage = 20; // equal to 20%
+        uint256 parentRoyaltyRightPercentage = _royaltyPercentage; // equal to 20%
         uint256 tokenId = nextTokenId++;
         _safeMint(msg.sender, tokenId);
         ips[tokenId] = IP(msg.sender, _title, _description, _category, _tag, _fileUpload, 5, 0, _royaltyPercentage);
@@ -279,11 +287,12 @@ contract IPX is ERC721 {
         return result;
     }
 
+    // Kuarng data IPnya yang di remix
     // Get siapa aja yang nge-remix IP user
     function getMyIPsRemix(uint256 parentTokenId) public view returns (address[] memory) {
         return remixersOf[parentTokenId];
     }
-
+    
     // Get IP yang user remix
     function getMyRemix(address _owner) public view returns (RemixInfo[] memory) {
         uint256[] storage tokenIds = ownerToTokenIds[_owner];
@@ -292,7 +301,7 @@ contract IPX is ERC721 {
         // First pass: count remixes
         for (uint256 i = 0; i < tokenIds.length; i++) {
             uint256 tokenId = tokenIds[i];
-            if (ips[tokenId].licenseopt == 5) {
+            if (ips[tokenId].licenseopt == 4) {
                 count++;
             }
         }
@@ -304,7 +313,7 @@ contract IPX is ERC721 {
         // Second pass: populate the result array
         for (uint256 i = 0; i < tokenIds.length; i++) {
             uint256 tokenId = tokenIds[i];
-            if (ips[tokenId].licenseopt == 5) {
+            if (ips[tokenId].licenseopt == 4) {
                 result[index] = RemixInfo({ip: ips[tokenId], parentId: parentIds[tokenId]});
                 index++;
             }
@@ -313,6 +322,7 @@ contract IPX is ERC721 {
         return result;
     }
 
+    // kurang data IP buat di bagian royalty management
     // Function untuk melihat siapa aja yang minjem IP gua
     function getListRentFromMyIp() public view returns (address[] memory) {
         uint256[] memory tokenIds = ownerToTokenIds[msg.sender];

@@ -102,10 +102,6 @@ contract IPXTest is Test, IERC721Receiver {
         address parentRoyaltyToken = ipX.royaltyTokens(0);
         address childRoyaltyToken = ipX.royaltyTokens(1);
 
-        // console.log(parentRoyaltyToken, childRoyaltyToken);
-        // console.log(IERC20(childRoyaltyToken).balanceOf(parentRoyaltyToken));
-        // console.log(IERC20(childRoyaltyToken).balanceOf(owner));
-
         // parent should have 20% of the child royalty token
         assertEq(IERC20(childRoyaltyToken).balanceOf(parentRoyaltyToken), 20_000_000e18);
 
@@ -127,13 +123,6 @@ contract IPXTest is Test, IERC721Receiver {
         vm.roll(block.number + 1);
         RoyaltyToken(rt).claimRoyalty(blockNumber);
     }
-
-    // function test_buyOwnIP() public {
-    //     uint256 tokenId = ipX.registerIP("My IP", "Desc", 1, "Tag", "ipfs://file", 0, 10 ether, 5);
-
-    //     vm.expectRevert("Cannot buy your own IP");
-    //     ipX.buyIP{value: 10 ether}(tokenId);
-    // }
 
     function test_getIPsNotOwnedBy() public {
         address owner = address(this);
@@ -183,9 +172,9 @@ contract IPXTest is Test, IERC721Receiver {
 
         // Buat remix IP
         uint256 remixTokenId =
-            ipX.remixIP("Remix IP", "Remix Description", 1, "Remix Tag", "ipfs://remix", 5, originalTokenId);
+            ipX.remixIP("Remix IP", "Remix Description", 1, "Remix Tag", "ipfs://remix", 4, originalTokenId);
         uint256 remixTokenId2 =
-            ipX.remixIP("Remix IP", "Remix Description", 1, "Remix Tag", "ipfs://remix", 5, originalTokenId);
+            ipX.remixIP("Remix IP", "Remix Description", 1, "Remix Tag", "ipfs://remix", 4, originalTokenId);
         console.log("Remix token ID:", remixTokenId);
         console.log("Remix token ID:", remixTokenId2);
 
