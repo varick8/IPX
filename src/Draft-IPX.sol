@@ -58,8 +58,14 @@ contract IPX is ERC721 {
         IP ip;
         uint256 parentId;
     }
-    // Mapping dari tokenId ke IP metadata
 
+    // Struct buat fungsi ijal supaya nge-return data dari IP yang dipinjem
+    struct RentInfo {
+        IP ip;
+        uint256 parentId;
+    }
+
+    // Mapping dari tokenId ke IP metadata
     mapping(uint256 => IP) public ips;
 
     // Mapping dari tokenId ke Rent metadata
@@ -81,6 +87,8 @@ contract IPX is ERC721 {
 
     // parent IP id => list of remixers' addresses
     mapping(uint256 => address[]) public remixersOf;
+
+    mapping(uint256 => mapping(address => uint256)) public remixTokenOf;
 
     // helper function untuk keperluan buy [buat map ownerToTokenIds]
     function _removeTokenIdFromOwner(address owner, uint256 tokenId) internal {
@@ -186,6 +194,7 @@ contract IPX is ERC721 {
         if (!hasRemixed[parentId][msg.sender]) {
             remixersOf[parentId].push(msg.sender);
             hasRemixed[parentId][msg.sender] = true;
+            remixTokenOf[parentId][msg.sender] = tokenId;
         }
 
         // Add this line to update the mapping
@@ -280,8 +289,16 @@ contract IPX is ERC721 {
     }
 
     // Get siapa aja yang nge-remix IP user
-    function getMyIPsRemix(uint256 parentTokenId) public view returns (address[] memory) {
-        return remixersOf[parentTokenId];
+    function getMyIPsRemix(uint256 parentTokenId) public view returns (RemixInfo[] memory) {
+        address[] memory remixerAddresses = remixersOf[parentTokenId];
+        RemixInfo[] memory remixList = new RemixInfo[](remixerAddresses.length);
+
+        for (uint256 i = 0; i < remixerAddresses.length; i++) {
+            address remixer = remixerAddresses[i];
+            uint256 remixTokenId = remixTokenOf[parentTokenId][remixer];
+            remixList[i] = RemixInfo({ip: ips[remixTokenId], parentId: parentTokenId});
+        }
+        return remixList;
     }
 
     // Get IP yang user remix

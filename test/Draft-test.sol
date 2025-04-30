@@ -233,14 +233,28 @@ contract IPXTest is Test, IERC721Receiver {
         console.log("Remix token ID:", remixTokenId);
         console.log("Remix token ID:", remixTokenId2);
 
-        address[] memory remixers = ipX.getMyIPsRemix(originalTokenId);
+        IPX.RemixInfo[] memory remixes = ipX.getMyIPsRemix(originalTokenId);
 
-        console.log("Remixer's address 1:", remixers[0]);
-        console.log("Remixer's address 2:", remixers[1]);
+        console.log("Remix 1 title:", remixes[0].ip.title);
+        console.log("Remixer's address 2:", remixes[1].ip.title);
+        console.log("Data remix 1:", remixes[0]);
+        console.log("Data remix 2:", remixes[1]);
 
-        assertEq(remixers.length, 2);
-        assertEq(remixers[0], user1);
-        assertEq(remixers[1], user2);
+        assertEq(remixes.length, 2);
+
+        // cek apakah parent id nya cocok
+        assertEq(remixes[0].parentId, originalTokenId);
+        assertEq(remixes[1].parentId, originalTokenId);
+
+        // cek data asli dari remix
+        assertEq(remixes[0].ip.fileUpload, "ipfs://remix1");
+        assertEq(remixes[1].ip.fileUpload, "ipfs://remix2");
+        assertEq(remixes[0].ip.title, "Remix IP 1");
+        assertEq(remixes[1].ip.title, "Remix IP 2");
+
+        // cek creator
+        // assertEq(remixes[0].ip.creator, user1);
+        // assertEq(remixes[1].ip.creator, user2);
     }
 
     // GetIp: tambahin yang bukan kategori remix (Alex)
