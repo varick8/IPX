@@ -107,15 +107,15 @@ contract IPX is ERC721 {
     // tamabahin logic license opt
     // 0 = personal, 1 = rent, 2 = rent&buy, 3 = remix
     function registerIP(
-        string memory _title,
-        string memory _description,
         uint256 _category,
-        string memory _tag,
-        string memory _fileUpload,
         uint8 _licenseopt,
         uint256 _basePrice,
         uint256 _rentPrice,
-        uint256 _royaltyPercentage
+        uint256 _royaltyPercentage,
+        string memory _tag,
+        string memory _title,
+        string memory _description,
+        string memory _fileUpload
     ) public returns (uint256) {
         uint256 tokenId = nextTokenId++;
 
