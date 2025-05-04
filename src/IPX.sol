@@ -29,6 +29,7 @@ contract IPX is ERC721 {
         uint256 basePrice;
         uint256 rentPrice;
         uint256 royaltyPercentage;
+        uint256 pendingRoyalty;
     }
 
     function logAllIps(uint256 totaldata) public view {
@@ -87,6 +88,8 @@ contract IPX is ERC721 {
     // id IP => user => data rent
     mapping(uint256 => mapping(address => Rent)) public rental;
 
+    mapping(uint256 => Rent) public rentData; // untuk tiap IP hanya satu penyewa aktif
+
     // id IP => parent IP
     mapping(uint256 => uint256) public parentIds;
 
@@ -143,7 +146,8 @@ contract IPX is ERC721 {
             licenseopt: _licenseopt,
             basePrice: _basePrice,
             rentPrice: _rentPrice,
-            royaltyPercentage: _royaltyPercentage
+            royaltyPercentage: _royaltyPercentage,
+            pendingRoyalty: 0
         });
 
         ips[tokenId] = newIP;
@@ -213,7 +217,7 @@ contract IPX is ERC721 {
         // uint256 parentRoyaltyRightPercentage = ips[parentId].royaltyPercentage;
         uint256 tokenId = nextTokenId++;
         _safeMint(msg.sender, tokenId);
-        ips[tokenId] = IP(msg.sender, _title, _description, _category, _fileUpload, 4, 0, 0, 0);
+        ips[tokenId] = IP(msg.sender, _title, _description, _category, _fileUpload, 4, 0, 0, 0, 0);
         parentIds[tokenId] = parentId;
 
         if (!hasRemixed[parentId][msg.sender]) {
@@ -245,6 +249,8 @@ contract IPX is ERC721 {
         require(parentIds[remixTokenId] < remixTokenId, "Remix must have a valid parentId");
         if (msg.value == 0) revert("No royalty sent");
 
+        // Transfer royalty to the parent IP
+        ips[parentId].pendingRoyalty += msg.value;
         royalties[parentId].pendingRoyalty += msg.value;
     }
 
@@ -303,7 +309,7 @@ contract IPX is ERC721 {
     function getIPsNotOwnedByRemix(address user) public view returns (IP[] memory) {
         uint256 count = 0;
         for (uint256 i = 0; i < nextTokenId; i++) {
-            if (ips[i].owner != user && ips[i].licenseopt == 3) {
+            if (ips[i].owner != user && ips[i].licenseopt == 3 && !isCurrentlyRentedByUser(i, user)) {
                 count++;
             }
         }
@@ -311,12 +317,17 @@ contract IPX is ERC721 {
         IP[] memory result = new IP[](count);
         uint256 index = 0;
         for (uint256 i = 0; i < nextTokenId; i++) {
-            if (ips[i].owner != user && ips[i].licenseopt == 3) {
+            if (ips[i].owner != user && ips[i].licenseopt == 3 && !isCurrentlyRentedByUser(i, user)) {
                 result[index++] = ips[i];
             }
         }
 
         return result;
+    }
+
+    function isCurrentlyRentedByUser(uint256 ipId, address user) internal view returns (bool) {
+        Rent memory rent = rentData[ipId];
+        return rent.renter == user && rent.isValid && rent.expiresAt > block.timestamp;
     }
 
     // Get seluruh IP yang disewa oleh user
@@ -381,16 +392,29 @@ contract IPX is ERC721 {
 
     // Kuarng data IPnya yang di remix
     // Get siapa aja yang nge-remix IP user
-    function getMyIPsRemix(uint256 parentTokenId) public view returns (RemixInfo[] memory) {
-        address[] memory remixerAddresses = remixersOf[parentTokenId];
-        RemixInfo[] memory remixList = new RemixInfo[](remixerAddresses.length);
-
-        for (uint256 i = 0; i < remixerAddresses.length; i++) {
-            address remixer = remixerAddresses[i];
-            uint256 remixTokenId = remixTokenOf[parentTokenId][remixer];
-            remixList[i] = RemixInfo({ip: ips[remixTokenId], parentId: parentTokenId});
+    function getMyIPsRemix(address owner) public view returns (RemixInfo[] memory) {
+        // Hitung jumlah IP milik owner yang telah diremix orang lain
+        uint256 count = 0;
+        for (uint256 i = 0; i < nextTokenId; i++) {
+            if (ips[i].owner == owner && remixersOf[i].length > 0) {
+                count++;
+            }
         }
-        return remixList;
+
+        RemixInfo[] memory results = new RemixInfo[](count);
+        uint256 index = 0;
+
+        for (uint256 i = 0; i < nextTokenId; i++) {
+            if (ips[i].owner == owner && remixersOf[i].length > 0) {
+                results[index] = RemixInfo({
+                    ip: ips[i],
+                    parentId: i
+                });
+                index++;
+            }
+        }
+
+        return results;
     }
 
     // Get IP yang user remix

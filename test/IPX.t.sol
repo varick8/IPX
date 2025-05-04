@@ -234,7 +234,7 @@ contract IPXTest is Test, IERC721Receiver {
     }
 
     function test_getMyIPsRemix() public {
-        address owner = address(1);
+        address owner = address(this);
         address user1 = address(2);
         address user2 = address(3);
 
@@ -250,24 +250,13 @@ contract IPXTest is Test, IERC721Receiver {
         console.log("Remix token ID:", remixTokenId);
         console.log("Remix token ID:", remixTokenId2);
 
-        IPX.RemixInfo[] memory remixes = ipX.getMyIPsRemix(originalTokenId);
+        IPX.RemixInfo[] memory parentIP = ipX.getMyIPsRemix(address(this));
 
-        console.log("Remix 1 title:", remixes[0].ip.title);
-        console.log("Remix 1 description:", remixes[0].ip.description);
-        console.log("Remix 2 title:", remixes[1].ip.title);
-        console.log("Remix 2 description:", remixes[1].ip.description);
+        console.log("parentIP 1 title:", parentIP[0].ip.title);
+        console.log("parentIP 1 description:", parentIP[0].ip.description);
+        console.log("parentIP 1 earnings=:", parentIP[0].ip.pendingRoyalty);
 
-        assertEq(remixes.length, 2);
-
-        // cek apakah parent id nya cocok
-        assertEq(remixes[0].parentId, originalTokenId);
-        assertEq(remixes[1].parentId, originalTokenId);
-
-        // cek data asli dari remix
-        assertEq(remixes[0].ip.fileUpload, "ipfs://remix1");
-        assertEq(remixes[1].ip.fileUpload, "ipfs://remix2");
-        assertEq(remixes[0].ip.title, "Remix IP 1");
-        assertEq(remixes[1].ip.title, "Remix IP 2");
+        assertEq(parentIP.length, 1);
     }
 
     // GetIp: tambahin yang bukan kategori remix (Alex)
