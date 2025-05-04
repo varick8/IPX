@@ -10,7 +10,7 @@ contract IPX is ERC721 {
     error InsufficientFunds();
     error InvalidTokenId();
 
-    uint256 public rentId;
+    // uint256 public rentId;
     uint256 public nextTokenId = 0;
     // RoyaltyTokenFactory public royaltyTokenFactory;
 
@@ -187,7 +187,8 @@ contract IPX is ERC721 {
         uint256 durationInDays = finalprice / price;
         uint256 durationInSeconds = durationInDays * 1 days;
         if (msg.value < price) revert InsufficientFunds();
-        rental[tokenId][msg.sender] = Rent({expiresAt: block.timestamp + durationInSeconds, renter: msg.sender, isValid: true});
+        rental[tokenId][msg.sender] =
+            Rent({expiresAt: block.timestamp + durationInSeconds, renter: msg.sender, isValid: true});
         rents[tokenId].push(msg.sender);
     }
 
@@ -235,7 +236,7 @@ contract IPX is ERC721 {
     // Fungsi untuk menyetor royalti ke IP parent
     function depositRoyalty(uint256 remixTokenId) external payable {
         uint256 parentId = parentIds[remixTokenId];
-        if (parentId == 0 && remixTokenId != 0) revert("Remix must have a valid parentId");
+        require(parentIds[remixTokenId] < remixTokenId, "Remix must have a valid parentId");
         if (msg.value == 0) revert("No royalty sent");
 
         royalties[parentId].pendingRoyalty += msg.value;
@@ -272,7 +273,7 @@ contract IPX is ERC721 {
         return result;
     }
 
-      // kurang logic yang bukan remix licesenceopt != 3
+    // kurang logic yang bukan remix licesenceopt != 3
     // Get IP yang bukan punya owner
     function getIPsNotOwnedBy(address user) public view returns (IP[] memory) {
         uint256 count = 0;
@@ -330,16 +331,13 @@ contract IPX is ERC721 {
 
         for (uint256 tokenId = 0; tokenId < nextTokenId; tokenId++) {
             Rent storage rent = rental[tokenId][renter];
-                result[index] = RentedIP({
-                    ip: ips[tokenId],
-                    rent: rent
-                });
-                index++;
+            result[index] = RentedIP({ip: ips[tokenId], rent: rent});
+            index++;
         }
         return result;
     }
 
-     function getRoyalty(uint256 tokenId) external view returns (uint256 pending, uint256 claimed) {
+    function getRoyalty(uint256 tokenId) external view returns (uint256 pending, uint256 claimed) {
         Royalty memory royalty = royalties[tokenId];
         return (royalty.pendingRoyalty, royalty.claimedRoyalty);
     }
@@ -350,9 +348,8 @@ contract IPX is ERC721 {
             for (uint256 i = 0; i < renters.length; i++) {
                 address renter = renters[i];
                 if (
-                    rental[tokenId][renter].expiresAt > 0 &&
-                    rental[tokenId][renter].expiresAt < block.timestamp &&
-                    rental[tokenId][renter].isValid
+                    rental[tokenId][renter].expiresAt > 0 && rental[tokenId][renter].expiresAt < block.timestamp
+                        && rental[tokenId][renter].isValid
                 ) {
                     rental[tokenId][renter].isValid = false;
                 }
@@ -389,7 +386,7 @@ contract IPX is ERC721 {
         }
         return remixList;
     }
-    
+
     // Get IP yang user remix
     function getMyRemix(address _owner) public view returns (RemixInfo[] memory) {
         uint256[] storage tokenIds = ownerToTokenIds[_owner];

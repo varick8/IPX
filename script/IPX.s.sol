@@ -6,9 +6,7 @@ import {Script, console} from "forge-std/Script.sol";
 import {MockUSDC} from "../src/MockUSDC.sol";
 import {IPX} from "../src/IPX.sol";
 
-
 contract IPXScript is Script {
-
     function run() public {
         vm.startBroadcast();
         address mockUSDC = address(new MockUSDC());

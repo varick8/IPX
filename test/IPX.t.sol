@@ -28,8 +28,7 @@ contract IPXTest is Test, IERC721Receiver {
 
         uint256 tokenId1 = ipX.registerIP("Title", "Description", 1, "ipfs://hash", 1, 1, 0, 10);
 
-        uint256 tokenId2 =
-            ipX.registerIP("Title again", "Description again", 2, "ipfs://hash again", 2, 2, 0, 20);
+        uint256 tokenId2 = ipX.registerIP("Title again", "Description again", 2, "ipfs://hash again", 2, 2, 0, 20);
 
         assertEq(ipX.ownerOf(tokenId1), owner);
         IPX.IP memory ip = ipX.getIP(tokenId1);
@@ -104,27 +103,47 @@ contract IPXTest is Test, IERC721Receiver {
         // console.log(IERC20(childRoyaltyToken).balanceOf(parentRoyaltyToken));
         // console.log(IERC20(childRoyaltyToken).balanceOf(owner));
 
-        // parent should have 20% of the child royalty token
+        // // parent should have 20% of the child royalty token
         // assertEq(IERC20(childRoyaltyToken).balanceOf(parentRoyaltyToken), 20_000_000e18);
 
-        // creator should have 80% of the child royalty token
+        // // creator should have 80% of the child royalty token
         // assertEq(IERC20(childRoyaltyToken).balanceOf(owner), 80_000_000e18);
     }
 
-    // function test_deposit_claim_royalty() public {
-    //     // royalty reward token is USDC
-    //     mockUSDC.mint(address(this), 1000e6);
-    //     uint256 tokenIp = ipX.registerIP("My IP", "Desc", 1, "ipfs://file", 0, 1 ether, 0, 5);
+    function test_deposit_claim_royalty() public {
+        address owner = address(this);
+        address remixer = address(0x2);
 
-    //     // deposit royalty
-    //     // address rt = ipX.royaltyTokens(tokenIp);
-    //     // IERC20(mockUSDC).approve(rt, 1000e6);
-    //     // uint256 blockNumber = RoyaltyToken(rt).depositRoyalty(1000e6);
+        vm.deal(owner, 10 ether);
+        vm.deal(remixer, 10 ether);
 
-    //     // advance 1 block
-    //     // vm.roll(block.number + 1);
-    //     // RoyaltyToken(rt).claimRoyalty(blockNumber);
-    // }
+        vm.prank(owner);
+        // ipX.ips(0);
+        uint256 parentTokenId = ipX.registerIP("My IP", "Desc", 1, "ipfs://file", 0, 1 ether, 0, 5);
+        assertEq(ipX.getIP(parentTokenId).owner, owner);
+        console.log(ipX.getIP(parentTokenId).owner, owner);
+
+        vm.prank(remixer);
+        uint256 remixTokenId = ipX.remixIP("Remix IP", "This is a remix", 1, "ipfs", parentTokenId);
+
+        vm.prank(remixer);
+        ipX.depositRoyalty{value: 1 ether}(remixTokenId);
+
+        (uint256 pendingRoyalty,) = ipX.royalties(parentTokenId);
+        assertEq(pendingRoyalty, 1 ether, "Royalty should be deposited");
+
+        uint256 ownerBalanceBefore = owner.balance;
+
+        vm.prank(owner);
+        ipX.claimRoyalty(parentTokenId);
+
+        uint256 ownerBalanceAfter = owner.balance;
+        assertEq(ownerBalanceAfter - ownerBalanceBefore, 1 ether, "Owner should receive royalty");
+
+        (uint256 pendingRoyaltyAfter, uint256 claimed) = ipX.royalties(parentTokenId);
+        assertEq(claimed, 1 ether, "Claimed royalty should be updated");
+        assertEq(pendingRoyaltyAfter, 0, "Pending royalty should be zero");
+    }
 
     // function test_buyOwnIP() public {
     //     uint256 tokenId = ipX.registerIP("My IP", "Desc", 1, "Tag", "ipfs://file", 0, 10 ether, 5);
@@ -184,10 +203,8 @@ contract IPXTest is Test, IERC721Receiver {
         console.log("Original token ID:", originalTokenId);
 
         // Buat remix IP
-        uint256 remixTokenId =
-            ipX.remixIP("Remix IP", "Remix Description", 1, "ipfs://remix", originalTokenId);
-        uint256 remixTokenId2 =
-            ipX.remixIP("Remix IP", "Remix Description", 1, "ipfs://remix", originalTokenId);
+        uint256 remixTokenId = ipX.remixIP("Remix IP", "Remix Description", 1, "ipfs://remix", originalTokenId);
+        uint256 remixTokenId2 = ipX.remixIP("Remix IP", "Remix Description", 1, "ipfs://remix", originalTokenId);
         console.log("Remix token ID:", remixTokenId);
         console.log("Remix token ID:", remixTokenId2);
 
@@ -226,12 +243,10 @@ contract IPXTest is Test, IERC721Receiver {
             ipX.registerIP("Original IP", "Original Description", 1, "ipfs://original", 0, 1 ether, 0, 5);
 
         vm.prank(user1);
-        uint256 remixTokenId =
-            ipX.remixIP("Remix IP 1", "Remix 1 Description", 1, "ipfs://remix1", originalTokenId);
+        uint256 remixTokenId = ipX.remixIP("Remix IP 1", "Remix 1 Description", 1, "ipfs://remix1", originalTokenId);
 
         vm.prank(user2);
-        uint256 remixTokenId2 =
-            ipX.remixIP("Remix IP 2", "Remix 2 Description", 1, "ipfs://remix2", originalTokenId);
+        uint256 remixTokenId2 = ipX.remixIP("Remix IP 2", "Remix 2 Description", 1, "ipfs://remix2", originalTokenId);
         console.log("Remix token ID:", remixTokenId);
         console.log("Remix token ID:", remixTokenId2);
 
@@ -436,7 +451,7 @@ contract IPXTest is Test, IERC721Receiver {
             console.log("Rental renter:", rents[0].rent.renter);
             console.log("Rental expires at:", rents[0].rent.expiresAt);
             console.log("Rental is valid:", rents[0].rent.isValid);
-            
+
             // Add other fields that actually exist in the Rent struct
         }
     }
