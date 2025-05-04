@@ -61,8 +61,8 @@ contract IPX is ERC721 {
 
     // Struct buat fungsi ijal supaya nge-return data dari IP yang dipinjem
     struct RentInfo {
-        IP ip;
-        uint256 parentId;
+        IP[] ip;
+        uint256 renterId;
     }
 
     struct RentedIP {
@@ -89,6 +89,10 @@ contract IPX is ERC721 {
 
     // id IP => parent IP
     mapping(uint256 => uint256) public parentIds;
+
+    mapping(address => IP[]) public renterIPs;
+ 
+     mapping(address => IP[]) public buyIPs;
 
     // id IP => royalty token
     // mapping(uint256 => address) public royaltyTokens;
@@ -176,6 +180,7 @@ contract IPX is ERC721 {
         // hapus pemilik lama, tambah ke pemilik baru
         _removeTokenIdFromOwner(currentOwner, tokenId);
         ownerToTokenIds[msg.sender].push(tokenId);
+        buyIPs[msg.sender].push(ips[tokenId]);
     }
 
     // Rent IP [dipinjem]
@@ -186,10 +191,11 @@ contract IPX is ERC721 {
         if (finalprice % price != 0) revert("Final price must be a multiple of rent price per day");
         uint256 durationInDays = finalprice / price;
         uint256 durationInSeconds = durationInDays * 1 days;
-        if (msg.value < price) revert InsufficientFunds();
+        if (msg.value < finalprice) revert InsufficientFunds();
         rental[tokenId][msg.sender] =
             Rent({expiresAt: block.timestamp + durationInSeconds, renter: msg.sender, isValid: true});
         rents[tokenId].push(msg.sender);
+        renterIPs[msg.sender].push(ips[tokenId]);
     }
 
     // remix ip
@@ -418,7 +424,7 @@ contract IPX is ERC721 {
 
     // kurang data IP buat di bagian royalty management
     // Function untuk melihat siapa aja yang minjem IP gua
-    function getListRentFromMyIp() public view returns (address[] memory) {
+    function getListRentFromMyIp() public view returns (RentInfo[] memory) {
         uint256[] memory tokenIds = ownerToTokenIds[msg.sender];
 
         // First, count the maximum possible number of renters
@@ -428,38 +434,46 @@ contract IPX is ERC721 {
         }
 
         // Create temporary arrays
-        address[] memory tempRenters = new address[](maxRenters);
-        uint256 uniqueCount = 0;
+        RentInfo[] memory result = new RentInfo[](maxRenters);
+        uint256 resultIndex = 0;
 
-        // Collect unique renters
-        for (uint256 i = 0; i < tokenIds.length; i++) {
-            uint256 tokenId = tokenIds[i];
-            for (uint256 j = 0; j < rents[tokenId].length; j++) {
-                address renter = rents[tokenId][j];
-                bool isDuplicate = false;
+        // For each token ID owned by the sender
+         for (uint256 i = 0; i < tokenIds.length; i++) {
+             uint256 tokenId = tokenIds[i];
+             address[] memory rentersOfToken = rents[tokenId];
+             // For each renter of this token
+             for (uint256 j = 0; j < rentersOfToken.length; j++) {
+                 address renter = rentersOfToken[j];
 
-                // Check if this address already exists in our result
-                for (uint256 k = 0; k < uniqueCount; k++) {
-                    if (tempRenters[k] == renter) {
-                        isDuplicate = true;
-                        break;
-                    }
+             // Check if the rental is still active
+                 if (rental[tokenId][renter].expiresAt > block.timestamp) {
+                     // Create an array with the single IP for this rental
+                     IP[] memory rentedIP = new IP[](1);
+                     rentedIP[0] = ips[tokenId];
+ 
+                     // Add the rental info to the result
+                     result[resultIndex] = RentInfo({
+                         ip: rentedIP,
+                         renterId: tokenId
+                     });
+ 
+                     resultIndex++;
                 }
+             }
+         }
 
-                // If not a duplicate, add it
-                if (!isDuplicate) {
-                    tempRenters[uniqueCount] = renter;
-                    uniqueCount++;
-                }
-            }
-        }
-
-        // Create a right-sized array with only unique renters
-        address[] memory uniqueRenters = new address[](uniqueCount);
-        for (uint256 i = 0; i < uniqueCount; i++) {
-            uniqueRenters[i] = tempRenters[i];
-        }
-
-        return uniqueRenters;
+         // Create a right-sized array if there are fewer active rentals than maxRenters
+         if (resultIndex < maxRenters) {
+             RentInfo[] memory trimmedResult = new RentInfo[](resultIndex);
+             for (uint256 i = 0; i < resultIndex; i++) {
+                 trimmedResult[i] = result[i];
+             }
+             return trimmedResult;
+         }
+        return result;
     }
+
+    function getListBuy() public view returns (IP[] memory) {
+         return buyIPs[msg.sender];
+     }
 }
