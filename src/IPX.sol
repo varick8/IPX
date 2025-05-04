@@ -95,7 +95,7 @@ contract IPX is ERC721 {
 
     mapping(address => IP[]) public renterIPs;
  
-     mapping(address => IP[]) public buyIPs;
+    mapping(address => IP[]) public buyIPs;
 
     // id IP => royalty token
     // mapping(uint256 => address) public royaltyTokens;
@@ -290,7 +290,7 @@ contract IPX is ERC721 {
     function getIPsNotOwnedBy(address user) public view returns (IP[] memory) {
         uint256 count = 0;
         for (uint256 i = 0; i < nextTokenId; i++) {
-            if (ips[i].owner != user && ips[i].licenseopt != 3 && ips[i].licenseopt != 4) {
+            if (ips[i].owner != user && ips[i].licenseopt != 3 && ips[i].licenseopt != 4 && !isCurrentlyRentedByUser(i, user)) {
                 count++;
             }
         }
@@ -298,7 +298,7 @@ contract IPX is ERC721 {
         IP[] memory result = new IP[](count);
         uint256 index = 0;
         for (uint256 i = 0; i < nextTokenId; i++) {
-            if (ips[i].owner != user && ips[i].licenseopt != 3 && ips[i].licenseopt != 4) {
+            if (ips[i].owner != user && ips[i].licenseopt != 3 && ips[i].licenseopt != 4 && !isCurrentlyRentedByUser(i, user)) {
                 result[index++] = ips[i];
             }
         }
@@ -309,7 +309,7 @@ contract IPX is ERC721 {
     function getIPsNotOwnedByRemix(address user) public view returns (IP[] memory) {
         uint256 count = 0;
         for (uint256 i = 0; i < nextTokenId; i++) {
-            if (ips[i].owner != user && ips[i].licenseopt == 3 && !isCurrentlyRentedByUser(i, user)) {
+            if (ips[i].owner != user && ips[i].licenseopt == 3) {
                 count++;
             }
         }

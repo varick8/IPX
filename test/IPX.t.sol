@@ -65,7 +65,7 @@ contract IPXTest is Test, IERC721Receiver {
         address buyer = vm.addr(1);
         vm.deal(buyer, 10 ether);
         vm.prank(buyer);
-        ipX.buyIP{value: 2 ether}(tokenId);
+        ipX.buyIP{value: 1 ether}(tokenId);
 
         // pindah kepemilikan
         assertEq(ipX.ownerOf(tokenId), buyer);
@@ -92,9 +92,12 @@ contract IPXTest is Test, IERC721Receiver {
 
         uint256 tokenId = ipX.registerIP("My IP", "Desc", 1, "ipfs://file", 0, 1 ether, 0, 5);
 
+        address remixer = vm.addr(1);
+        vm.startPrank(remixer);
         ipX.remixIP("My Remix IP", "Desc", 1, "ipfs://file", tokenId);
 
         assertEq(ipX.ownerOf(0), owner);
+        assertEq(ipX.ownerOf(1), remixer);
 
         // address parentRoyaltyToken = ipX.royaltyTokens(0);
         // address childRoyaltyToken = ipX.royaltyTokens(1);
@@ -155,8 +158,10 @@ contract IPXTest is Test, IERC721Receiver {
     function test_getIPsNotOwnedBy() public {
         address owner = address(this);
 
+        vm.startPrank(owner);
         ipX.registerIP("IP1", "Desc1", 1, "ipfs://1", 1, 1 ether, 0, 10);
         ipX.registerIP("IP2", "Desc2", 1, "ipfs://2", 1, 1 ether, 0, 10);
+        vm.stopPrank();
 
         address otherUser = vm.addr(2);
         vm.startPrank(otherUser);
@@ -438,7 +443,15 @@ contract IPXTest is Test, IERC721Receiver {
          bool foundIP1 = false;
          bool foundIP2 = false;
  
-         for (uint256 i = 0; i < twoBuys.length; i++) {
+        //  for (uint256 i = 0; i < twoBuys.length; i++) {
+        //      if (keccak256(abi.encodePacked(twoBuys[i].title)) == keccak256(abi.encodePacked("Buy Test IP 1"))) {
+        //          foundIP1 = true;
+        //      }
+        //      if (keccak256(abi.encodePacked(twoBuys[i].title)) == keccak256(abi.encodePacked("Buy Test IP 2"))) {
+        //          foundIP2 = true;
+        //      }
+        //  }
+            for (uint256 i = 0; i < twoBuys.length; i++) {
              if (keccak256(abi.encodePacked(twoBuys[i].title)) == keccak256(abi.encodePacked("Buy Test IP 1"))) {
                  foundIP1 = true;
              }
